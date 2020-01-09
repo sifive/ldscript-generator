@@ -7,13 +7,15 @@ if __name__ == "__main__":
         loader = jinja2.PackageLoader(__name__, "templates"),
     )
 
-    hello_template = env.get_template("template.lds")
+    default_template = env.get_template("default.lds")
+    ramrodata_template = env.get_template("ramrodata.lds")
+    scratchpad_template = env.get_template("scratchpad.lds")
 
-    default_values = {
+    values = {
         "memories" : [
             {
                 "name" : "ram",
-                "permissions" : "wxa!ri)",
+                "permissions" : "wxa!ri",
                 "base" : "0x80000000",
                 "size" : "0x4000",
             },
@@ -30,14 +32,6 @@ if __name__ == "__main__":
                 "type" : "PT_LOAD",
             },
             {
-                "name" : "ram_init",
-                "type" : "PT_LOAD",
-            },
-            {
-                "name" : "itim_init",
-                "type" : "PT_LOAD",
-            },
-            {
                 "name" : "ram",
                 "type" : "PT_LOAD",
             },
@@ -48,27 +42,10 @@ if __name__ == "__main__":
         ],
         "default_stack_size" : "0x400",
         "default_heap_size" : "0x400",
-        "text_in_itim" : False,
-        "ramrodata" : False,
-        "num_harts" : 1,
-        "boot_hart" : 1,
+        "num_harts" : 2,
+        "boot_hart" : 0,
         "chicken_bit" : 0,
-        "init" : {
-            "vma" : "flash",
-            "lma" : "flash",
-            "phdr" : "flash",
-        },
-        "text" : {
-            "vma" : "flash",
-            "lma" : "flash",
-            "phdr" : "flash",
-        },
-        "rodata" : {
-            "vma" : "flash",
-            "lma" : "flash",
-            "phdr" : "flash",
-        },
-        "ctors" : {
+        "rom" : {
             "vma" : "flash",
             "lma" : "flash",
             "phdr" : "flash",
@@ -77,30 +54,19 @@ if __name__ == "__main__":
             "vma" : "ram",
             "lma" : "flash",
             "source_phdr" : "flash",
-            "dest_phdr" : "itim_init",
+            "dest_phdr" : "itim",
         },
-        "data" : {
+        "ram" : {
             "vma" : "ram",
             "lma" : "flash",
             "source_phdr" : "flash",
-            "dest_phdr" : "ram_init",
-        },
-        "bss" : {
-            "vma" : "ram",
-            "lma" : "flash",
-            "phdr" : "ram_init",
-        },
-        "stack" : {
-            "vma" : "ram",
-            "lma" : "flash",
-            "phdr" : "ram_init",
-        },
-        "heap" : {
-            "vma" : "ram",
-            "lma" : "flash",
-            "phdr" : "ram_init",
+            "dest_phdr" : "ram",
         },
     }
 
-    print(hello_template.render(default_values))
-
+    print("Default:")
+    print(default_template.render(values))
+    print("\nramrodata:")
+    print(ramrodata_template.render(values))
+    print("\nscratchpad:")
+    print(scratchpad_template.render(values))
