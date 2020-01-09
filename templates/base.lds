@@ -6,16 +6,9 @@ ENTRY(_enter)
 
 MEMORY
 {
-    {%- for memory in memories %}
+    {% for memory in memories %}
         {{ memory.name }} ({{ memory.permissions }}) : ORIGIN = {{ memory.base }}, LENGTH = {{ memory.size }}
-    {%- endfor %}
-}
-
-PHDRS
-{
-    {%- for phdr in phdrs %}
-        {{ phdr.name }} {{ phdr.type }}
-    {%- endfor %}
+    {% endfor %}
 }
 
 SECTIONS
@@ -69,7 +62,7 @@ SECTIONS
 	KEEP (*(.text.metal.init.*))
 	KEEP (*(SORT_NONE(.init)))
 	KEEP (*(.text.libgloss.start))
-    } >{{ rom.vma }} AT>{{ rom.lma }} :{{ rom.phdr }}
+    } >{{ rom.vma }} AT>{{ rom.lma }}
 
 {% if not text_in_itim %}
     .text : {
@@ -77,12 +70,12 @@ SECTIONS
 	*(.text.startup .text.startup.*)
 	*(.text .text.*)
 	*(.gnu.linkonce.t.*)
-    } >{{ rom.vma }} AT>{{ rom.lma }} :{{ rom.phdr }}
+    } >{{ rom.vma }} AT>{{ rom.lma }}
 {% endif %}
 
     .fini : {
 	KEEP (*(SORT_NONE(.fini)))
-    } >{{ rom.vma }} AT>{{ rom.lma }} :{{ rom.phdr }}
+    } >{{ rom.vma }} AT>{{ rom.lma }}
 
     PROVIDE (__etext = .);
     PROVIDE (_etext = .);
@@ -99,7 +92,7 @@ SECTIONS
 	*(.srodata.cst4)
 	*(.srodata.cst2)
 	*(.srodata .srodata.*)
-    } >{{ rom.vma }} AT>{{ rom.lma }} :{{ rom.phdr }}
+    } >{{ rom.vma }} AT>{{ rom.lma }}
 {% endif %}
 
     .preinit_array : {
@@ -107,21 +100,21 @@ SECTIONS
 	PROVIDE_HIDDEN (__preinit_array_start = .);
 	KEEP (*(.preinit_array))
 	PROVIDE_HIDDEN (__preinit_array_end = .);
-    } >{{ rom.vma }} AT>{{ rom.lma }} :{{ rom.phdr }}
+    } >{{ rom.vma }} AT>{{ rom.lma }}
 
     .init_array : {
 	PROVIDE_HIDDEN (__init_array_start = .);
 	KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
 	KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
 	PROVIDE_HIDDEN (__init_array_end = .);
-    } >{{ rom.vma }} AT>{{ rom.lma }} :{{ rom.phdr }}
+    } >{{ rom.vma }} AT>{{ rom.lma }}
 
     .fini_array : {
 	PROVIDE_HIDDEN (__fini_array_start = .);
 	KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
 	KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
 	PROVIDE_HIDDEN (__fini_array_end = .);
-    } >{{ rom.vma }} AT>{{ rom.lma }} :{{ rom.phdr }}
+    } >{{ rom.vma }} AT>{{ rom.lma }}
 
     .ctors : {
 	KEEP (*crtbegin.o(.ctors))
@@ -129,7 +122,7 @@ SECTIONS
 	KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .ctors))
 	KEEP (*(SORT(.ctors.*)))
 	KEEP (*(.ctors))
-    } >{{ rom.vma }} AT>{{ rom.lma }} :{{ rom.phdr }}
+    } >{{ rom.vma }} AT>{{ rom.lma }}
 
     .dtors : {
 	KEEP (*crtbegin.o(.dtors))
@@ -137,7 +130,7 @@ SECTIONS
 	KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .dtors))
 	KEEP (*(SORT(.dtors.*)))
 	KEEP (*(.dtors))
-    } >{{ rom.vma }} AT>{{ rom.lma }} :{{ rom.phdr }}
+    } >{{ rom.vma }} AT>{{ rom.lma }}
 
     /* ITIM SECTION
      *
@@ -152,12 +145,12 @@ SECTIONS
     .litimalign : {
 	. = ALIGN(8);
 	PROVIDE( metal_segment_itim_source_start = . );
-    } >{{ itim.lma }} AT>{{ itim.lma }} :{{ itim.source_phdr }}
+    } >{{ itim.lma }} AT>{{ itim.lma }}
 
     .ditimalign : {
 	. = ALIGN(8);
 	PROVIDE( metal_segment_itim_target_start = . );
-    } >{{ itim.vma }} AT>{{ itim.lma }} :{{ itim.dest_phdr }}
+    } >{{ itim.vma }} AT>{{ itim.lma }}
 
 {% if text_in_itim %}
     /* The .text section is placed in the ITIM to improve the performance
@@ -169,13 +162,13 @@ SECTIONS
 	*(.text.startup .text.startup.*)
 	*(.text .text.*)
 	*(.gnu.linkonce.t.*)
-    } >{{ itim.vma }} AT>{{ itim.lma }} :{{ itim.dest_phdr }}
+    } >{{ itim.vma }} AT>{{ itim.lma }}
 {% endif %}
 
     .itim : {
 	*(.itim .itim.*)
 	PROVIDE( metal_segment_itim_target_end = . );
-    } >{{ itim.vma }} AT>{{ itim.lma }} :{{ itim.dest_phdr }}
+    } >{{ itim.vma }} AT>{{ itim.lma }}
 
     /* RAM SECTION
      *
@@ -189,12 +182,12 @@ SECTIONS
 	. = ALIGN(8);
 	PROVIDE( _data_lma = . );
 	PROVIDE( metal_segment_data_source_start = . );
-    } >{{ ram.lma }} AT>{{ ram.lma }} :{{ ram.source_phdr }}
+    } >{{ ram.lma }} AT>{{ ram.lma }}
 
     .dalign : {
 	. = ALIGN(8);
 	PROVIDE( metal_segment_data_target_start = . );
-    } >{{ ram.vma }} AT>{{ ram.lma }} :{{ ram.dest_phdr }}
+    } >{{ ram.vma }} AT>{{ ram.lma }}
 
     .data : {
 	*(.data .data.*)
@@ -218,7 +211,7 @@ SECTIONS
 	*(.srodata.cst2)
 	*(.srodata .srodata.*)
 {% endif %}
-    } >{{ ram.vma }} AT>{{ ram.lma }} :{{ ram.dest_phdr }}
+    } >{{ ram.vma }} AT>{{ ram.lma }}
 
     PROVIDE( _edata = . );
     PROVIDE( edata = . );
@@ -235,7 +228,7 @@ SECTIONS
 	*(.bss .bss.*)
 	*(.gnu.linkonce.b.*)
 	*(COMMON)
-    } >{{ ram.vma }} AT>{{ ram.lma }} :{{ ram.dest_phdr }}
+    } >{{ ram.vma }}
 
     PROVIDE( _end = . );
     PROVIDE( end = . );
@@ -245,16 +238,16 @@ SECTIONS
 	PROVIDE(metal_segment_stack_begin = .);
 	. = __stack_size; /* Hart 0 */
 	PROVIDE( _sp = . );
-{%- for hart in range(num_harts - 1) %}
+{% for hart in range(num_harts - 1) %}
 	. = __stack_size; /* Hart {{ hart + 1 }} */
-{%- endfor %}
+{% endfor %}
 	PROVIDE(metal_segment_stack_end = .);
-    } >{{ ram.vma }} :{{ ram.source_phdr }}
+    } >{{ ram.vma }}
 
     .heap : {
 	PROVIDE( metal_segment_heap_target_start = . );
 	. = __heap_size;
 	PROVIDE( metal_segment_heap_target_end = . );
 	PROVIDE( _heap_end = . );
-    } >{{ ram.vma }} :{{ ram.source_phdr }}
+    } >{{ ram.vma }}
 }

@@ -11,8 +11,7 @@ if __name__ == "__main__":
     ramrodata_template = env.get_template("ramrodata.lds")
     scratchpad_template = env.get_template("scratchpad.lds")
 
-    values = {
-        "memories" : [
+    memories = [
             {
                 "name" : "ram",
                 "permissions" : "wxa!ri",
@@ -25,48 +24,27 @@ if __name__ == "__main__":
                 "base" : "0x20010000",
                 "size" : "0x6a120",
             },
-        ],
-        "phdrs" : [
-            {
-                "name" : "flash",
-                "type" : "PT_LOAD",
-            },
-            {
-                "name" : "ram",
-                "type" : "PT_LOAD",
-            },
-            {
-                "name" : "itim",
-                "type" : "PT_LOAD",
-            },
-        ],
+        ]
+
+    values = {
+        "memories" : memories,
         "default_stack_size" : "0x400",
         "default_heap_size" : "0x400",
-        "num_harts" : 2,
+        "num_harts" : 1,
         "boot_hart" : 0,
-        "chicken_bit" : 0,
+        "chicken_bit" : 1,
         "rom" : {
             "vma" : "flash",
             "lma" : "flash",
-            "phdr" : "flash",
         },
         "itim" : {
             "vma" : "ram",
             "lma" : "flash",
-            "source_phdr" : "flash",
-            "dest_phdr" : "itim",
         },
         "ram" : {
             "vma" : "ram",
             "lma" : "flash",
-            "source_phdr" : "flash",
-            "dest_phdr" : "ram",
         },
     }
 
-    print("Default:")
     print(default_template.render(values))
-    print("\nramrodata:")
-    print(ramrodata_template.render(values))
-    print("\nscratchpad:")
-    print(scratchpad_template.render(values))
