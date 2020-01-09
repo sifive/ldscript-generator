@@ -6,9 +6,9 @@ ENTRY(_enter)
 
 MEMORY
 {
-    {% for memory in memories %}
+    {% for memory in memories -%}
         {{ memory.name }} ({{ memory.permissions }}) : ORIGIN = {{ memory.base }}, LENGTH = {{ memory.size }}
-    {% endfor %}
+    {%- endfor %}
 }
 
 SECTIONS
@@ -149,7 +149,7 @@ SECTIONS
      */
 
     .itim : ALIGN(8) {
-{% if text_in_itim %}
+{%- if text_in_itim %}
         /* The .text sections are placed in the ITIM to improve the performance
          * of all post-init and non-constructor application code. Note that
          * this may cause the program to fail to link if the ITIM is not large
@@ -177,7 +177,7 @@ SECTIONS
     .data : ALIGN(8) {
         *(.data .data.*)
         *(.gnu.linkonce.d.*)
-{% if ramrodata %}
+{%- if ramrodata %}
         /* Read-only data is placed in RAM to improve performance, since
          * read-only memory generally has higher latency than RAM */
         *(.rdata)
@@ -189,7 +189,7 @@ SECTIONS
         *(.sdata .sdata.* .sdata2.*)
         *(.gnu.linkonce.s.*)
         . = ALIGN(8);
-{% if ramrodata %}
+{%- if ramrodata %}
         *(.srodata.cst16)
         *(.srodata.cst8)
         *(.srodata.cst4)
@@ -218,9 +218,9 @@ SECTIONS
         PROVIDE(metal_segment_stack_begin = .);
         . = __stack_size; /* Hart 0 */
         PROVIDE( _sp = . );
-{% for hart in range(num_harts - 1) %}
+{%- for hart in range(num_harts - 1) %}
         . = __stack_size; /* Hart {{ hart + 1 }} */
-{% endfor %}
+{%- endfor %}
         PROVIDE(metal_segment_stack_end = .);
     } >{{ ram.vma }}
 
