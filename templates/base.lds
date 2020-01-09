@@ -56,80 +56,86 @@ SECTIONS
      */
 
     .init : {
-	/* The _enter symbol is placed in the .text.metal.init.enter section
-	 * and must be placed at the beginning of the program */
-	KEEP (*(.text.metal.init.enter))
-	KEEP (*(.text.metal.init.*))
-	KEEP (*(SORT_NONE(.init)))
-	KEEP (*(.text.libgloss.start))
+        /* The _enter symbol is placed in the .text.metal.init.enter section
+         * and must be placed at the beginning of the program */
+        KEEP (*(.text.metal.init.enter))
+        KEEP (*(.text.metal.init.*))
+        KEEP (*(SORT_NONE(.init)))
+        KEEP (*(.text.libgloss.start))
     } >{{ rom.vma }} AT>{{ rom.lma }}
 
 {% if not text_in_itim %}
     .text : {
-	*(.text.unlikely .text.unlikely.*)
-	*(.text.startup .text.startup.*)
-	*(.text .text.*)
-	*(.gnu.linkonce.t.*)
+        *(.text.unlikely .text.unlikely.*)
+        *(.text.startup .text.startup.*)
+        *(.text .text.*)
+        *(.gnu.linkonce.t.*)
     } >{{ rom.vma }} AT>{{ rom.lma }}
 {% endif %}
 
     .fini : {
-	KEEP (*(SORT_NONE(.fini)))
+        KEEP (*(SORT_NONE(.fini)))
     } >{{ rom.vma }} AT>{{ rom.lma }}
-
-    PROVIDE (__etext = .);
-    PROVIDE (_etext = .);
-    PROVIDE (etext = .);
 
 {% if not ramrodata %}
     .rodata : {
-	*(.rdata)
-	*(.rodata .rodata.*)
-	*(.gnu.linkonce.r.*)
-	. = ALIGN(8);
-	*(.srodata.cst16)
-	*(.srodata.cst8)
-	*(.srodata.cst4)
-	*(.srodata.cst2)
-	*(.srodata .srodata.*)
+        *(.rdata)
+        *(.rodata .rodata.*)
+        *(.gnu.linkonce.r.*)
+        . = ALIGN(8);
+        *(.srodata.cst16)
+        *(.srodata.cst8)
+        *(.srodata.cst4)
+        *(.srodata.cst2)
+        *(.srodata .srodata.*)
     } >{{ rom.vma }} AT>{{ rom.lma }}
 {% endif %}
 
     .preinit_array : {
-	. = ALIGN(8);
-	PROVIDE_HIDDEN (__preinit_array_start = .);
-	KEEP (*(.preinit_array))
-	PROVIDE_HIDDEN (__preinit_array_end = .);
+        . = ALIGN(8);
+        PROVIDE_HIDDEN (__preinit_array_start = .);
+        KEEP (*(.preinit_array))
+        PROVIDE_HIDDEN (__preinit_array_end = .);
     } >{{ rom.vma }} AT>{{ rom.lma }}
 
     .init_array : {
-	PROVIDE_HIDDEN (__init_array_start = .);
-	KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
-	KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
-	PROVIDE_HIDDEN (__init_array_end = .);
+        PROVIDE_HIDDEN (__init_array_start = .);
+        KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
+        KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
+        PROVIDE_HIDDEN (__init_array_end = .);
+        PROVIDE_HIDDEN ( metal_constructors_start = .);");
+        KEEP (*(SORT_BY_INIT_PRIORITY(.metal.init_array.*)));");
+        KEEP (*(.metal.init_array));");
+        PROVIDE_HIDDEN ( metal_constructors_end = .);");
     } >{{ rom.vma }} AT>{{ rom.lma }}
 
     .fini_array : {
-	PROVIDE_HIDDEN (__fini_array_start = .);
-	KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
-	KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
-	PROVIDE_HIDDEN (__fini_array_end = .);
+        PROVIDE_HIDDEN (__fini_array_start = .);
+        KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
+        KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
+        PROVIDE_HIDDEN (__fini_array_end = .);
+        PROVIDE_HIDDEN ( metal_destructors_start = .);");
+        KEEP (*(SORT_BY_INIT_PRIORITY(.metal.fini_array.*)));");
+        KEEP (*(.metal.fini_array));");
+        PROVIDE_HIDDEN ( metal_destructors_end = .);");
     } >{{ rom.vma }} AT>{{ rom.lma }}
 
     .ctors : {
-	KEEP (*crtbegin.o(.ctors))
-	KEEP (*crtbegin?.o(.ctors))
-	KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .ctors))
-	KEEP (*(SORT(.ctors.*)))
-	KEEP (*(.ctors))
+        KEEP (*crtbegin.o(.ctors))
+        KEEP (*crtbegin?.o(.ctors))
+        KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .ctors))
+        KEEP (*(SORT(.ctors.*)))
+        KEEP (*(.ctors))
+        KEEP (*(.metal.ctors .metal.ctors.*))
     } >{{ rom.vma }} AT>{{ rom.lma }}
 
     .dtors : {
-	KEEP (*crtbegin.o(.dtors))
-	KEEP (*crtbegin?.o(.dtors))
-	KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .dtors))
-	KEEP (*(SORT(.dtors.*)))
-	KEEP (*(.dtors))
+        KEEP (*crtbegin.o(.dtors))
+        KEEP (*crtbegin?.o(.dtors))
+        KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .dtors))
+        KEEP (*(SORT(.dtors.*)))
+        KEEP (*(.dtors))
+        KEEP (*(.metal.dtors .metal.dtors.*))
     } >{{ rom.vma }} AT>{{ rom.lma }}
 
     /* ITIM SECTION
@@ -142,33 +148,23 @@ SECTIONS
      * functions which benefit from low instruction-fetch latency.
      */
 
-    .litimalign : {
-	. = ALIGN(8);
-	PROVIDE( metal_segment_itim_source_start = . );
-    } >{{ itim.lma }} AT>{{ itim.lma }}
-
-    .ditimalign : {
-	. = ALIGN(8);
-	PROVIDE( metal_segment_itim_target_start = . );
-    } >{{ itim.vma }} AT>{{ itim.lma }}
-
+    .itim : ALIGN(8) {
 {% if text_in_itim %}
-    /* The .text section is placed in the ITIM to improve the performance
-     * of all post-init and non-constructor application code. Note that
-     * this may cause the program to fail to link if the ITIM is not large
-     * enough to contain the entire .text section. */
-    .text : {
-	*(.text.unlikely .text.unlikely.*)
-	*(.text.startup .text.startup.*)
-	*(.text .text.*)
-	*(.gnu.linkonce.t.*)
-    } >{{ itim.vma }} AT>{{ itim.lma }}
+        /* The .text sections are placed in the ITIM to improve the performance
+         * of all post-init and non-constructor application code. Note that
+         * this may cause the program to fail to link if the ITIM is not large
+         * enough to contain the entire .text section. */
+        *(.text.unlikely .text.unlikely.*)
+        *(.text.startup .text.startup.*)
+        *(.text .text.*)
+        *(.gnu.linkonce.t.*)
 {% endif %}
-
-    .itim : {
-	*(.itim .itim.*)
-	PROVIDE( metal_segment_itim_target_end = . );
+        *(.itim .itim.*)
     } >{{ itim.vma }} AT>{{ itim.lma }}
+
+    PROVIDE( metal_segment_itim_source_start = LOADADDR(.itim) );
+    PROVIDE( metal_segment_itim_target_start = ADDR(.itim) );
+    PROVIDE( metal_segment_itim_target_end = ADDR(.itim) + SIZEOF(.itim) );
 
     /* RAM SECTION
      *
@@ -178,76 +174,60 @@ SECTIONS
      * heap.
      */
 
-    .lalign : {
-	. = ALIGN(8);
-	PROVIDE( _data_lma = . );
-	PROVIDE( metal_segment_data_source_start = . );
-    } >{{ ram.lma }} AT>{{ ram.lma }}
-
-    .dalign : {
-	. = ALIGN(8);
-	PROVIDE( metal_segment_data_target_start = . );
-    } >{{ ram.vma }} AT>{{ ram.lma }}
-
-    .data : {
-	*(.data .data.*)
-	*(.gnu.linkonce.d.*)
+    .data : ALIGN(8) {
+        *(.data .data.*)
+        *(.gnu.linkonce.d.*)
 {% if ramrodata %}
-	/* Read-only data is placed in RAM to improve performance, since
-	 * read-only memory generally has higher latency than RAM */
-	*(.rdata)
-	*(.rodata .rodata.*)
-	*(.gnu.linkonce.r.*)
+        /* Read-only data is placed in RAM to improve performance, since
+         * read-only memory generally has higher latency than RAM */
+        *(.rdata)
+        *(.rodata .rodata.*)
+        *(.gnu.linkonce.r.*)
 {% endif %}
-	. = ALIGN(8);
-	PROVIDE( __global_pointer$ = . + 0x800 );
-	*(.sdata .sdata.* .sdata2.*)
-	*(.gnu.linkonce.s.*)
-	. = ALIGN(8);
+        . = ALIGN(8);
+        PROVIDE( __global_pointer$ = . + 0x800 );
+        *(.sdata .sdata.* .sdata2.*)
+        *(.gnu.linkonce.s.*)
+        . = ALIGN(8);
 {% if ramrodata %}
-	*(.srodata.cst16)
-	*(.srodata.cst8)
-	*(.srodata.cst4)
-	*(.srodata.cst2)
-	*(.srodata .srodata.*)
+        *(.srodata.cst16)
+        *(.srodata.cst8)
+        *(.srodata.cst4)
+        *(.srodata.cst2)
+        *(.srodata .srodata.*)
 {% endif %}
     } >{{ ram.vma }} AT>{{ ram.lma }}
 
-    PROVIDE( _edata = . );
-    PROVIDE( edata = . );
-    PROVIDE( metal_segment_data_target_end = . );
+    PROVIDE( metal_segment_data_source_start = LOADADDR(.data) );
+    PROVIDE( metal_segment_data_target_start = ADDR(.data) );
+    PROVIDE( metal_segment_data_target_end = ADDR(.data) + SIZEOF(.data) );
 
-    . = ALIGN(8);
-    PROVIDE( _fbss = . );
-    PROVIDE( __bss_start = . );
-    PROVIDE( metal_segment_bss_target_start = . );
-
-    .bss : {
-	*(.sbss*)
-	*(.gnu.linkonce.sb.*)
-	*(.bss .bss.*)
-	*(.gnu.linkonce.b.*)
-	*(COMMON)
+    .bss : ALIGN(8) {
+        *(.sbss*)
+        *(.gnu.linkonce.sb.*)
+        *(.bss .bss.*)
+        *(.gnu.linkonce.b.*)
+        *(COMMON)
     } >{{ ram.vma }}
 
-    PROVIDE( _end = . );
-    PROVIDE( end = . );
-    PROVIDE( metal_segment_bss_target_end = . );
+    PROVIDE( metal_segment_bss_source_start = LOADADDR(.bss) );
+    PROVIDE( metal_segment_bss_target_start = ADDR(.bss) );
+    PROVIDE( metal_segment_bss_target_end = ADDR(.bss) + SIZEOF(.bss) );
 
     .stack : {
-	PROVIDE(metal_segment_stack_begin = .);
-	. = __stack_size; /* Hart 0 */
-	PROVIDE( _sp = . );
+        PROVIDE(metal_segment_stack_begin = .);
+        . = __stack_size; /* Hart 0 */
+        PROVIDE( _sp = . );
 {% for hart in range(num_harts - 1) %}
-	. = __stack_size; /* Hart {{ hart + 1 }} */
+        . = __stack_size; /* Hart {{ hart + 1 }} */
 {% endfor %}
-	PROVIDE(metal_segment_stack_end = .);
+        PROVIDE(metal_segment_stack_end = .);
     } >{{ ram.vma }}
 
     .heap : {
-	PROVIDE( metal_segment_heap_target_start = . );
-	. = __heap_size;
-	PROVIDE( metal_segment_heap_target_end = . );
-	PROVIDE( _heap_end = . );
+        PROVIDE( metal_segment_heap_target_start = . );
+        . = __heap_size;
+        PROVIDE( metal_segment_heap_target_end = . );
+        PROVIDE( _heap_end = . );
     } >{{ ram.vma }}
 }
