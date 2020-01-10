@@ -2,7 +2,7 @@
 
 import argparse
 import jinja2
-import pydevictree
+import pydevicetree
 
 TEMPLATES_PATH = "templates"
 
@@ -89,4 +89,4 @@ def main(argv):
 
 if __name__ == "__main__":
     import sys
-    main(sys.argv)
+    main(sys.argv[1:])
