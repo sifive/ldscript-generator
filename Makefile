@@ -1,5 +1,5 @@
 
-run: ldscript_generator.py virtualenv
+run: generate_ldscript.py virtualenv
 	. venv/bin/activate && ./$< -d e31.dts -l metal.default.lds
 	. venv/bin/activate && ./$< -d e31.dts -l metal.ramrodata.lds --ramrodata
 	. venv/bin/activate && ./$< -d e31.dts -l metal.scratchpad.lds --scratchpad
@@ -17,11 +17,11 @@ venv/bin/activate:
 	python3 -m venv venv
 
 .PHONY: lint
-lint: virtualenv
+test-lint: virtualenv
 	. venv/bin/activate && pylint *.py
 
 .PHONY: test
-test: lint
+test: test-lint
 
 clean:
 	-rm -rf venv __pycache__
