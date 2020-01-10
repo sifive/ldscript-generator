@@ -22,7 +22,7 @@ optional arguments:
 
 ## Copyright and License
 
-Copyright (c) 2019 SiFive Inc.
+Copyright (c) 2020 SiFive Inc.
 
 The contents of this repository are distributed according to the terms described in the LICENSE
 file.
