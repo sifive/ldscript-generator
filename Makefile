@@ -1,3 +1,5 @@
+# Copyright (c) 2020 SiFive Inc.
+# SPDX-License-Identifier: Apache-2.0
 
 run: generate_ldscript.py virtualenv
 	. venv/bin/activate && ./$< -d e31.dts -o metal.default.lds

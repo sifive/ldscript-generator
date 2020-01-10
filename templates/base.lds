@@ -1,3 +1,5 @@
+/* Copyright (c) 2020 SiFive Inc. */
+/* SPDX-License-Identifier: Apache-2.0 */
 {# Checks to make sure that the memories are provided -#}
 {% if rom is undefined %}
     {{ missingvalue("No memory is provided for romable sections, cannot render linker script!") }}
