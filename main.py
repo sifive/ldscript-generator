@@ -2,10 +2,23 @@
 
 import jinja2
 
+TEMPLATES_PATH = "templates"
+
+def missingvalue(message):
+    """ Raise an UndefinedError
+        This function is made available to the template so that it can report
+        when required values are not present and cause template rendering to
+        fail.
+    """
+    raise jinja2.UndefinedError(message)
+
 if __name__ == "__main__":
     env = jinja2.Environment(
-        loader = jinja2.PackageLoader(__name__, "templates"),
+        loader = jinja2.PackageLoader(__name__, TEMPLATES_PATH),
     )
+    # Make the missingvalue() function available in the template so that the
+    # template fails to render if we don't provide the values it needs.
+    env.globals["missingvalue"] = missingvalue
 
     default_template = env.get_template("default.lds")
     ramrodata_template = env.get_template("ramrodata.lds")

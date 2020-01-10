@@ -1,3 +1,13 @@
+{# Checks to make sure that the memories are provided -#}
+{% if rom is undefined %}
+    {{ missingvalue("No memory is provided for romable sections, cannot render linker script!") }}
+{% endif -%}
+{% if itim is undefined %}
+    {{ missingvalue("No memory is provided for itimable sections, cannot render linker script!") }}
+{% endif -%}
+{% if ram is undefined %}
+    {{ missingvalue("No memory is provided for ramable sections, cannot render linker script!") }}
+{% endif -%}
 OUTPUT_ARCH("riscv")
 
 {% block description %}{% endblock %}
@@ -8,6 +18,8 @@ MEMORY
 {
     {% for memory in memories -%}
         {{ memory.name }} ({{ memory.permissions }}) : ORIGIN = {{ memory.base }}, LENGTH = {{ memory.size }}
+    {% else %}
+        {{ missingvalue("No memories are defined, cannot render linker script!") }}
     {%- endfor %}
 }
 
@@ -24,7 +36,7 @@ SECTIONS
      * initializes the stack pointers for each hart at the right offset from
      * the _sp symbol.
      */
-    __stack_size = DEFINED(__stack_size) ? __stack_size : {{ default_stack_size }};
+    __stack_size = DEFINED(__stack_size) ? __stack_size : {{ default_stack_size|default("0x400") }};
     PROVIDE(__stack_size = __stack_size);
 
     /* The size of the heap can be overriden at build-time by adding the
@@ -33,8 +45,16 @@ SECTIONS
      *     -Xlinker --defsym=__heap_size=0xf00
      *
      * where 0xf00 can be replaced with the value of your choice.
+     *
+     * Altertatively, the heap can be grown to fill the entire remaining region
+     * of RAM by adding the following to CFLAGS:
+     *
+     *     -Xlinker --defsym=__heap_max=1
+     *
+     * Note that depending on the memory layout, the bitness (32/64bit) of the
+     * target, and the code model in use, this might cause a relocation error.
      */
-    __heap_size = DEFINED(__heap_size) ? __heap_size : {{ default_heap_size }};
+    __heap_size = DEFINED(__heap_size) ? __heap_size : {{ default_heap_size|default("0x400") }};
 
     /* The boot hart sets which hart runs the pre-main initialization routines,
      * including copying .data into RAM, zeroing the BSS region, running
@@ -42,11 +62,11 @@ SECTIONS
      * hart which runs application code unless the application overrides the
      * secondary_main() function to start execution on secondary harts.
      */
-    PROVIDE(__metal_boot_hart = {{ boot_hart }});
+    PROVIDE(__metal_boot_hart = {{ boot_hart|default(0) }});
 
     /* The chicken bit is used by pre-main initialization to enable/disable
      * certain core features */
-    PROVIDE(__metal_chicken_bit = {{ chicken_bit }});
+    PROVIDE(__metal_chicken_bit = {{ chicken_bit|default(0) }});
 
     /* ROM SECTION
      *
@@ -91,14 +111,13 @@ SECTIONS
     } >{{ rom.vma }} AT>{{ rom.lma }}
 {% endif %}
 
-    .preinit_array : {
-        . = ALIGN(8);
+    .preinit_array : ALIGN(8) {
         PROVIDE_HIDDEN (__preinit_array_start = .);
         KEEP (*(.preinit_array))
         PROVIDE_HIDDEN (__preinit_array_end = .);
     } >{{ rom.vma }} AT>{{ rom.lma }}
 
-    .init_array : {
+    .init_array : ALIGN(8) {
         PROVIDE_HIDDEN (__init_array_start = .);
         KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
         KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
@@ -109,7 +128,7 @@ SECTIONS
         PROVIDE_HIDDEN ( metal_constructors_end = .);");
     } >{{ rom.vma }} AT>{{ rom.lma }}
 
-    .fini_array : {
+    .fini_array : ALIGN(8) {
         PROVIDE_HIDDEN (__fini_array_start = .);
         KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
         KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
@@ -226,7 +245,9 @@ SECTIONS
 
     .heap : {
         PROVIDE( metal_segment_heap_target_start = . );
-        . = __heap_size;
+        /* If __heap_max is defined, grow the heap to use the rest of RAM,
+         * otherwise set the heap size to __heap_size */
+        . = DEFINED(__heap_max) ? MIN( LENGTH(ram) - ( . - ORIGIN(ram)) , 0x10000000) : __heap_size;
         PROVIDE( metal_segment_heap_target_end = . );
         PROVIDE( _heap_end = . );
     } >{{ ram.vma }}
