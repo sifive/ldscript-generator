@@ -1,5 +1,5 @@
 
-run: main.py virtualenv
+run: ldscript-generator.py virtualenv
 	./$< -d e31.dts -l metal.default.lds
 
 .PHONY: virtualenv
