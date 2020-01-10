@@ -1,6 +1,8 @@
 
 run: ldscript-generator.py virtualenv
 	./$< -d e31.dts -l metal.default.lds
+	./$< -d e31.dts -l metal.ramrodata.lds --ramrodata
+	./$< -d e31.dts -l metal.scratchpad.lds --scratchpad
 
 .PHONY: virtualenv
 virtualenv: venv/.stamp

@@ -61,6 +61,16 @@ def render_default(env, values):
 
     return default_template.render(values)
 
+def render_ramrodata(env, values):
+    ramrodata_template = env.get_template("ramrodata.lds")
+
+    return ramrodata_template.render(values)
+
+def render_scratchpad(env, values):
+    scratchpad_template = env.get_template("scratchpad.lds")
+
+    return scratchpad_template.render(values)
+
 def main(argv):
     arg_parser = argparse.ArgumentParser(description="Generate linker scripts from Devicetrees")
 
@@ -69,8 +79,10 @@ def main(argv):
     arg_parser.add_argument("-l", "--linker", required=True,
                             type=argparse.FileType('w'),
                             help="The path of the linker script to output")
-    arg_parser.add_argument("--scratchpad", help="Emits a linker script with the scratchpad layout")
-    arg_parser.add_argument("--ramrodata", help="Emits a linker script with the ramrodata layout")
+    arg_parser.add_argument("--scratchpad", action="store_true",
+                            help="Emits a linker script with the scratchpad layout")
+    arg_parser.add_argument("--ramrodata", action="store_true",
+                            help="Emits a linker script with the ramrodata layout")
 
     parsed_args = arg_parser.parse_args(argv)
 
@@ -116,7 +128,14 @@ def main(argv):
         },
     }
 
-    parsed_args.linker.write(render_default(env, values))
+    if parsed_args.ramrodata and parsed_args.scratchpad:
+        raise argparse.ArgumentError("--ramrodata and --scratchpad are mutually exclusive arguments")
+    elif parsed_args.ramrodata:
+        parsed_args.linker.write(render_ramrodata(env, values))
+    elif parsed_args.scratchpad:
+        parsed_args.linker.write(render_scratchpad(env, values))
+    else:
+        parsed_args.linker.write(render_default(env, values))
     parsed_args.linker.close()
 
 if __name__ == "__main__":

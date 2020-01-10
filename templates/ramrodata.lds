@@ -1,5 +1,6 @@
 {% extends "base.lds" %}
 
+{% block description %}
 /* RAM Read-Only Data Linker Script
  *
  * This linker script places application code and read-only data into writable
@@ -8,6 +9,7 @@
  * to overflow RAM, since it dramatically increases the quantity of data vying
  * for space there.
  */
+{% endblock %}
 
 {#
  # Set layout options
