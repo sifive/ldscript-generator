@@ -6,6 +6,7 @@
 	compatible = "SiFive,FE300-dev", "fe300-dev", "sifive-dev";
 	model = "SiFive,FE300";
 	chosen {
+		metal,boothart = <&L7>;
 		metal,ram = <&L6>;
 		metal,rom = <&testram0>;
 		metal,itim = <&L5>;

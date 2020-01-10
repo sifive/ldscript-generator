@@ -138,7 +138,10 @@ def main(argv):
         itim = {"vma": "ram", "lma": "ram"}
 
     harts = dts.get_by_path("/cpus").children
-    if len(harts) > 1:
+    chosenboothart = dts.chosen("metal,boothart")
+    if chosenboothart:
+        boot_hart = dts.get_by_reference(chosenboothart[0]).get_reg()[0][0]
+    elif len(harts) > 1:
         boot_hart = 1
     else:
         boot_hart = 0
