@@ -109,9 +109,9 @@ def main(argv):
 
     arg_parser.add_argument("-d", "--dts", required=True,
                             help="The path to the Devicetree for the target")
-    arg_parser.add_argument("-l", "--linker", required=True,
+    arg_parser.add_argument("-o", "--output", required=True,
                             type=argparse.FileType('w'),
-                            help="The path of the linker script to output")
+                            help="The path of the linker script file to output")
     group = arg_parser.add_mutually_exclusive_group()
     group.add_argument("--scratchpad", action="store_true",
                        help="Emits a linker script with the scratchpad layout")
@@ -169,12 +169,12 @@ def main(argv):
         itim = get_itim(dts)
         if int(itim["size"], base=16) >= MAGIC_RAMRODATA_TEXT_THRESHOLD:
             values["text_in_itim"] = True
-        parsed_args.linker.write(render_ramrodata(env, values))
+        parsed_args.output.write(render_ramrodata(env, values))
     elif parsed_args.scratchpad:
-        parsed_args.linker.write(render_scratchpad(env, values))
+        parsed_args.output.write(render_scratchpad(env, values))
     else:
-        parsed_args.linker.write(render_default(env, values))
-    parsed_args.linker.close()
+        parsed_args.output.write(render_default(env, values))
+    parsed_args.output.close()
 
 if __name__ == "__main__":
     import sys

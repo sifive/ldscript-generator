@@ -1,8 +1,8 @@
 
 run: generate_ldscript.py virtualenv
-	. venv/bin/activate && ./$< -d e31.dts -l metal.default.lds
-	. venv/bin/activate && ./$< -d e31.dts -l metal.ramrodata.lds --ramrodata
-	. venv/bin/activate && ./$< -d e31.dts -l metal.scratchpad.lds --scratchpad
+	. venv/bin/activate && ./$< -d e31.dts -o metal.default.lds
+	. venv/bin/activate && ./$< -d e31.dts -o metal.ramrodata.lds --ramrodata
+	. venv/bin/activate && ./$< -d e31.dts -o metal.scratchpad.lds --scratchpad
 
 .PHONY: virtualenv
 virtualenv: venv/.stamp
