@@ -1,10 +1,7 @@
 # Copyright (c) 2020 SiFive Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-run: generate_ldscript.py virtualenv
-	. venv/bin/activate && ./$< -d e31.dts -o metal.default.lds
-	. venv/bin/activate && ./$< -d e31.dts -o metal.ramrodata.lds --ramrodata
-	. venv/bin/activate && ./$< -d e31.dts -o metal.scratchpad.lds --scratchpad
+all: virtualenv
 
 .PHONY: virtualenv
 virtualenv: venv/.stamp
@@ -27,4 +24,3 @@ test: test-lint
 
 clean:
 	-rm -rf venv __pycache__
-	-rm metal.*.lds

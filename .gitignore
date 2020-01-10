@@ -1,4 +1,3 @@
 venv
 *.pyc
-.DS_Store
-metal.*.lds
+__pycache__
