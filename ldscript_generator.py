@@ -14,6 +14,10 @@ TEMPLATES_PATH = "templates"
 # places the text section into the ITIM
 MAGIC_RAMRODATA_TEXT_THRESHOLD = 0x8000
 
+ROM_MEMORY_NAME = "rom"
+RAM_MEMORY_NAME = "ram"
+ITIM_MEMORY_NAME = "itim"
+
 def missingvalue(message):
     """ Raise an UndefinedError
         This function is made available to the template so that it can report
@@ -32,7 +36,7 @@ def get_ram(dts):
         reg_array = dts.get_by_reference(ram).get_reg()
         reg = reg_array[0]
         return {
-            "name" : "ram",
+            "name" : RAM_MEMORY_NAME,
             "permissions" : "wxa!ri",
             "base" : "0x%x" % reg[0],
             "size" : "0x%x" % reg[1]
@@ -49,7 +53,7 @@ def get_itim(dts):
         reg_array = dts.get_by_reference(ram).get_reg()
         reg = reg_array[0]
         return {
-            "name" : "itim",
+            "name" : ITIM_MEMORY_NAME,
             "permissions" : "wxa!ri",
             "base" : "0x%x" % reg[0],
             "size" : "0x%x" % reg[1]
@@ -66,7 +70,7 @@ def get_rom(dts):
         reg_array = dts.get_by_reference(ram).get_reg()
         reg = reg_array[0]
         return {
-            "name" : "rom",
+            "name" : ROM_MEMORY_NAME,
             "permissions" : "rxa!wi",
             "base" : "0x%x" % reg[0],
             "size" : "0x%x" % reg[1]
@@ -128,14 +132,16 @@ def main(argv):
     memories = [x for x in [get_ram(dts), get_itim(dts), get_rom(dts)] if x is not None]
 
     if get_rom(dts) is not None:
-        rom = {"vma": "rom", "lma": "rom"}
+        rom = {"vma": ROM_MEMORY_NAME, "lma": ROM_MEMORY_NAME}
+        ram = {"vma": RAM_MEMORY_NAME, "lma": ROM_MEMORY_NAME}
     else:
-        rom = {"vma": "ram", "lma": "ram"}
+        rom = {"vma": RAM_MEMORY_NAME, "lma": RAM_MEMORY_NAME}
+        ram = {"vma": RAM_MEMORY_NAME, "lma": RAM_MEMORY_NAME}
 
     if get_itim(dts) is not None:
-        itim = {"vma": "itim", "lma": "itim"}
+        itim = {"vma": ITIM_MEMORY_NAME, "lma": "itim"}
     else:
-        itim = {"vma": "ram", "lma": "ram"}
+        itim = {"vma": RAM_MEMORY_NAME, "lma": RAM_MEMORY_NAME}
 
     harts = dts.get_by_path("/cpus").children
     chosenboothart = dts.chosen("metal,boothart")
@@ -156,10 +162,7 @@ def main(argv):
         "text_in_itim" : False,
         "rom" : rom,
         "itim" : itim,
-        "ram" : {
-            "vma" : "ram",
-            "lma" : "flash",
-        },
+        "ram" : ram,
     }
 
     if parsed_args.ramrodata:
