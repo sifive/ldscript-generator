@@ -66,7 +66,7 @@ def get_rom(dts):
     """
     Get the ROM from the devicetree, if one is chosen
     """
-    metal_ram = dts.chosen("metal,rom")
+    metal_ram = dts.chosen("metal,entry")
     if metal_ram:
         ram = metal_ram[0]
         reg_array = dts.get_by_reference(ram).get_reg()
