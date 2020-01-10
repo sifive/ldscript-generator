@@ -6,6 +6,10 @@ import pydevicetree
 
 TEMPLATES_PATH = "templates"
 
+# Sets the threshold size of the ITIM at or above which the "ramrodata" layout
+# places the text section into the ITIM
+MAGIC_RAMRODATA_TEXT_THRESHOLD = 0x8000
+
 def missingvalue(message):
     """ Raise an UndefinedError
         This function is made available to the template so that it can report
@@ -120,6 +124,7 @@ def main(argv):
         "num_harts" : len(harts),
         "boot_hart" : boot_hart,
         "chicken_bit" : 1,
+        "text_in_itim" : False,
         "rom" : rom,
         "itim" : itim,
         "ram" : {
@@ -131,6 +136,9 @@ def main(argv):
     if parsed_args.ramrodata and parsed_args.scratchpad:
         raise argparse.ArgumentError("--ramrodata and --scratchpad are mutually exclusive arguments")
     elif parsed_args.ramrodata:
+        itim = get_itim(dts)
+        if int(itim["size"], base=16) >= MAGIC_RAMRODATA_TEXT_THRESHOLD:
+            values["text_in_itim"] = True
         parsed_args.linker.write(render_ramrodata(env, values))
     elif parsed_args.scratchpad:
         parsed_args.linker.write(render_scratchpad(env, values))
