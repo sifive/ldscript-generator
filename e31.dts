@@ -5,6 +5,11 @@
 	#size-cells = <1>;
 	compatible = "SiFive,FE300-dev", "fe300-dev", "sifive-dev";
 	model = "SiFive,FE300";
+	chosen {
+		metal,ram = <&L6>;
+		metal,rom = <&testram0>;
+		metal,itim = <&L5>;
+	};
 	L15: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -41,6 +46,11 @@
 			compatible = "sifive,ahb-periph-port", "sifive,ahb-port", "sifive,periph-port", "simple-external-bus", "simple-bus";
 			ranges = <0x20000000 0x20000000 0x20000000>;
 			sifive,port-width-bytes = <4>;
+			testram0: testram@20000000 {
+				compatible = "sifive,testram0";
+				reg = <0x20000000 0x20000000>;
+				reg-names = "mem";
+			};
 		};
 		L11: ahb-sys-port@40000000 {
 			#address-cells = <1>;

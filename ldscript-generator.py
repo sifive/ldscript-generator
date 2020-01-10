@@ -15,13 +15,46 @@ def missingvalue(message):
     raise jinja2.UndefinedError(message)
 
 def get_ram(dts):
-    pass
+    metal_ram = dts.chosen("metal,ram")
+    if metal_ram:
+        ram = metal_ram[0]
+        reg_array = dts.get_by_reference(ram).get_reg()
+        reg = reg_array[0]
+        return {
+            "name" : "ram",
+            "permissions" : "wxa!ri",
+            "base" : "0x%x" % reg[0],
+            "size" : "0x%x" % reg[1]
+            }
+    return None
 
 def get_itim(dts):
-    pass
+    metal_ram = dts.chosen("metal,itim")
+    if metal_ram:
+        ram = metal_ram[0]
+        reg_array = dts.get_by_reference(ram).get_reg()
+        reg = reg_array[0]
+        return {
+            "name" : "itim",
+            "permissions" : "wxa!ri",
+            "base" : "0x%x" % reg[0],
+            "size" : "0x%x" % reg[1]
+            }
+    return None
 
 def get_rom(dts):
-    pass
+    metal_ram = dts.chosen("metal,rom")
+    if metal_ram:
+        ram = metal_ram[0]
+        reg_array = dts.get_by_reference(ram).get_reg()
+        reg = reg_array[0]
+        return {
+            "name" : "rom",
+            "permissions" : "rxa!wi",
+            "base" : "0x%x" % reg[0],
+            "size" : "0x%x" % reg[1]
+            }
+    return None
 
 def render_default(env, values):
     default_template = env.get_template("default.lds")
@@ -48,36 +81,35 @@ def main(argv):
     # template fails to render if we don't provide the values it needs.
     env.globals["missingvalue"] = missingvalue
 
-    memories = [
-            {
-                "name" : "ram",
-                "permissions" : "wxa!ri",
-                "base" : "0x80000000",
-                "size" : "0x4000",
-            },
-            {
-                "name" : "flash",
-                "permissions" : "rxai!w",
-                "base" : "0x20010000",
-                "size" : "0x6a120",
-            },
-        ]
+    dts = pydevicetree.Devicetree.parseFile(parsed_args.dts, followIncludes=True)
+
+    memories = [ x for x in [get_ram(dts), get_itim(dts), get_rom(dts)] if x is not None ]
+
+    if get_rom(dts) is not None:
+        rom = { "vma": "rom", "lma": "rom" }
+    else:
+        rom = { "vma": "ram", "lma": "ram" }
+
+    if get_itim(dts) is not None:
+        itim = { "vma": "itim", "lma": "itim" }
+    else:
+        itim = { "vma": "ram", "lma": "ram" }
+
+    harts = dts.get_by_path("/cpus").children
+    if len(harts) > 1:
+        boot_hart = 1
+    else:
+        boot_hart = 0
 
     values = {
         "memories" : memories,
         "default_stack_size" : "0x400",
         "default_heap_size" : "0x400",
-        "num_harts" : 1,
-        "boot_hart" : 0,
+        "num_harts" : len(harts),
+        "boot_hart" : boot_hart,
         "chicken_bit" : 1,
-        "rom" : {
-            "vma" : "flash",
-            "lma" : "flash",
-        },
-        "itim" : {
-            "vma" : "ram",
-            "lma" : "flash",
-        },
+        "rom" : rom,
+        "itim" : itim,
         "ram" : {
             "vma" : "ram",
             "lma" : "flash",
