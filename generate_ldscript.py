@@ -35,13 +35,15 @@ def get_ram(dts):
     metal_ram = dts.chosen("metal,ram")
     if metal_ram:
         ram = metal_ram[0]
+        chosen_range = metal_ram[1]
+        chosen_offset = metal_ram[2]
         reg_array = dts.get_by_reference(ram).get_reg()
-        reg = reg_array[0]
+        reg = reg_array[chosen_range]
         return {
             "name" : RAM_MEMORY_NAME,
             "permissions" : "wxa!ri",
-            "base" : "0x%x" % reg[0],
-            "size" : "0x%x" % reg[1]
+            "base" : "0x%x" % (reg[0] + chosen_offset),
+            "size" : "0x%x" % (reg[1] - chosen_offset)
             }
     return None
 
@@ -51,16 +53,16 @@ def get_itim(dts):
     """
     metal_itim = dts.chosen("metal,itim")
     if metal_itim:
-        ram = metal_itim[0]
+        itim = metal_itim[0]
         chosen_range = metal_itim[1]
         chosen_offset = metal_itim[2]
-        reg_array = dts.get_by_reference(ram).get_reg()
+        reg_array = dts.get_by_reference(itim).get_reg()
         reg = reg_array[chosen_range]
         return {
             "name" : ITIM_MEMORY_NAME,
             "permissions" : "wxa!ri",
-            "base" : "0x%x" % reg[0] + chosen_offset,
-            "size" : "0x%x" % reg[1] - chosen_offset
+            "base" : "0x%x" % (reg[0] + chosen_offset),
+            "size" : "0x%x" % (reg[1] - chosen_offset)
             }
     return None
 
@@ -68,18 +70,18 @@ def get_rom(dts):
     """
     Get the ROM from the devicetree, if one is chosen
     """
-    metal_ram = dts.chosen("metal,entry")
-    if metal_ram:
-        ram = metal_ram[0]
-        chosen_range = metal_ram[1]
-        chosen_offset = metal_ram[2]
-        reg_array = dts.get_by_reference(ram).get_reg()
+    metal_entry = dts.chosen("metal,entry")
+    if metal_entry:
+        rom = metal_entry[0]
+        chosen_range = metal_entry[1]
+        chosen_offset = metal_entry[2]
+        reg_array = dts.get_by_reference(rom).get_reg()
         reg = reg_array[chosen_range]
         return {
             "name" : ROM_MEMORY_NAME,
             "permissions" : "rxa!wi",
-            "base" : "0x%x" % reg[0] + chosen_offset,
-            "size" : "0x%x" % reg[1] - chosen_offset
+            "base" : "0x%x" % (reg[0] + chosen_offset),
+            "size" : "0x%x" % (reg[1] - chosen_offset)
             }
     return None
 
