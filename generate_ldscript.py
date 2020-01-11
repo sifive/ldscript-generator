@@ -66,6 +66,20 @@ def get_itim(dts):
             }
     return None
 
+def get_itim_size(dts):
+    """
+    Get the size of the ITIM, if it exists
+    """
+    metal_itim = dts.chosen("metal,itim")
+    if metal_itim:
+        itim = metal_itim[0]
+        chosen_range = metal_itim[1]
+        chosen_offset = metal_itim[2]
+        reg_array = dts.get_by_reference(itim).get_reg()
+        reg = reg_array[chosen_range]
+        return reg[1] - chosen_offset
+    return 0
+
 def get_rom(dts):
     """
     Get the ROM from the devicetree, if one is chosen
@@ -85,33 +99,9 @@ def get_rom(dts):
             }
     return None
 
-def render_default(env, values):
+def parse_arguments(argv):
     """
-    Render the default linker script
-    """
-    default_template = env.get_template("default.lds")
-
-    return default_template.render(values)
-
-def render_ramrodata(env, values):
-    """
-    Render the ramrodata linker script
-    """
-    ramrodata_template = env.get_template("ramrodata.lds")
-
-    return ramrodata_template.render(values)
-
-def render_scratchpad(env, values):
-    """
-    Render the scratchpad linker script
-    """
-    scratchpad_template = env.get_template("scratchpad.lds")
-
-    return scratchpad_template.render(values)
-
-def main(argv):
-    """
-    Parse arguments, extract data, and render the linker script to file
+    Parse the arguments into a dictionary with argparse
     """
     arg_parser = argparse.ArgumentParser(description="Generate linker scripts from Devicetrees")
 
@@ -126,14 +116,35 @@ def main(argv):
     group.add_argument("--ramrodata", action="store_true",
                        help="Emits a linker script with the ramrodata layout")
 
-    parsed_args = arg_parser.parse_args(argv)
+    return arg_parser.parse_args(argv)
 
+def get_template(parsed_args):
+    """
+    Initialize jinja2 and return the right template
+    """
     env = jinja2.Environment(
         loader=jinja2.PackageLoader(__name__, TEMPLATES_PATH),
         )
     # Make the missingvalue() function available in the template so that the
     # template fails to render if we don't provide the values it needs.
     env.globals["missingvalue"] = missingvalue
+
+    if parsed_args.ramrodata:
+        template = env.get_template("ramrodata.lds")
+    elif parsed_args.scratchpad:
+        template = env.get_template("scratchpad.lds")
+    else:
+        template = env.get_template("default.lds")
+
+    return template
+
+def main(argv):
+    """
+    Parse arguments, extract data, and render the linker script to file
+    """
+    parsed_args = parse_arguments(argv)
+
+    template = get_template(parsed_args)
 
     dts = pydevicetree.Devicetree.parseFile(parsed_args.dts, followIncludes=True)
 
@@ -146,8 +157,11 @@ def main(argv):
         rom = {"vma": RAM_MEMORY_NAME, "lma": RAM_MEMORY_NAME}
         ram = {"vma": RAM_MEMORY_NAME, "lma": RAM_MEMORY_NAME}
 
+    text_in_itim = False
     if get_itim(dts) is not None:
         itim = {"vma": ITIM_MEMORY_NAME, "lma": "itim"}
+    if parsed_args.ramrodata and get_itim_size(dts) >= MAGIC_RAMRODATA_TEXT_THRESHOLD:
+        text_in_itim = True
     else:
         itim = {"vma": RAM_MEMORY_NAME, "lma": RAM_MEMORY_NAME}
 
@@ -167,21 +181,13 @@ def main(argv):
         "num_harts" : len(harts),
         "boot_hart" : boot_hart,
         "chicken_bit" : 1,
-        "text_in_itim" : False,
+        "text_in_itim" : text_in_itim,
         "rom" : rom,
         "itim" : itim,
         "ram" : ram,
     }
 
-    if parsed_args.ramrodata:
-        itim = get_itim(dts)
-        if int(itim["size"], base=16) >= MAGIC_RAMRODATA_TEXT_THRESHOLD:
-            values["text_in_itim"] = True
-        parsed_args.output.write(render_ramrodata(env, values))
-    elif parsed_args.scratchpad:
-        parsed_args.output.write(render_scratchpad(env, values))
-    else:
-        parsed_args.output.write(render_default(env, values))
+    parsed_args.output.write(template.render(values))
     parsed_args.output.close()
 
 if __name__ == "__main__":
