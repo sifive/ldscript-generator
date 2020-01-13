@@ -7,6 +7,8 @@ Generate linker scripts from devicetree source files
 """
 
 import argparse
+import sys
+
 import jinja2
 import pydevicetree
 
@@ -28,7 +30,25 @@ def missingvalue(message):
     """
     raise jinja2.UndefinedError(message)
 
-def get_chosen_region(dts, chosen_property_name):
+class Region:
+    """Describes a memory region requested by the Devicetree"""
+    # pylint: disable=too-few-public-methods
+    def __init__(self, node, base, size, name):
+        self.node = node
+        self.base = base
+        self.size = size
+        self.name = name
+
+    def template_value(self, permissions):
+        """Format as a dict for templating"""
+        return {
+            "name": self.name,
+            "permissions": permissions,
+            "base": "0x%x" % self.base,
+            "size": "0x%x" % self.size,
+        }
+
+def get_chosen_region(dts, chosen_property_name, name):
     """Extract the requested address region from the chosen property"""
     chosen_property = dts.chosen(chosen_property_name)
 
@@ -42,65 +62,108 @@ def get_chosen_region(dts, chosen_property_name):
         base = reg[0] - chosen_offset
         size = reg[1] - chosen_offset
 
-        return (chosen_node, base, size)
-    return (None, None, None)
+        return Region(chosen_node, base, size, name)
+    return None
 
 def get_ram(dts):
     """
     Get the RAM from the devicetree, if one is chosen
     """
-    node, base, size = get_chosen_region(dts, "metal,ram")
-    if node:
-        path = node.get_path()
-        print("\tRAM:  0x%08x-0x%08x (%s)" % (base, base+size, path))
-        return {
-            "name" : RAM_MEMORY_NAME,
-            "permissions" : "wxa!ri",
-            "base" : "0x%08x" % base,
-            "size" : "0x%08x" % size,
-            }
-    return None
+    region = get_chosen_region(dts, "metal,ram", RAM_MEMORY_NAME)
+    if region is not None:
+        path = region.node.get_path()
+        print("\tRAM:  0x%08x-0x%08x (%s)" % (region.base, region.base+region.size, path))
+    return region
 
 def get_itim(dts):
     """
     Get the ITIM from the devicetree, if one is chosen
     """
-    node, base, size = get_chosen_region(dts, "metal,itim")
-    if node:
-        path = node.get_path()
-        print("\tITIM: 0x%08x-0x%08x (%s)" % (base, base+size, path))
-        return {
-            "name" : ITIM_MEMORY_NAME,
-            "permissions" : "wxa!ri",
-            "base" : "0x%08x" % base,
-            "size" : "0x%08x" % size,
-            }
-    return None
+    region = get_chosen_region(dts, "metal,itim", ITIM_MEMORY_NAME)
+    if region is not None:
+        path = region.node.get_path()
+        print("\tITIM: 0x%08x-0x%08x (%s)" % (region.base, region.base+region.size, path))
+    return region
 
 def get_itim_size(dts):
-    """
-    Get the size of the ITIM, if it exists
-    """
-    node, _, size = get_chosen_region(dts, "metal,itim")
-    if node:
-        return size
+    """Get the size of the ITIM from the Devicetree"""
+    region = get_chosen_region(dts, "metal,itim", ITIM_MEMORY_NAME)
+    if region is not None:
+        return region.size
     return 0
 
 def get_rom(dts):
     """
     Get the ROM from the devicetree, if one is chosen
     """
-    node, base, size = get_chosen_region(dts, "metal,entry")
-    if node:
-        path = node.get_path()
-        print("\tROM:  0x%08x-0x%08x (%s)" % (base, base+size, path))
-        return {
-            "name" : ROM_MEMORY_NAME,
-            "permissions" : "rxa!wi",
-            "base" : "0x%08x" % base,
-            "size" : "0x%08x" % size,
-            }
-    return None
+    region = get_chosen_region(dts, "metal,entry", ROM_MEMORY_NAME)
+    if region is not None:
+        path = region.node.get_path()
+        print("\tROM:  0x%08x-0x%08x (%s)" % (region.base, region.base+region.size, path))
+    return region
+
+def get_memories(dts):
+    """
+    Extract the memory regions and turn them into the mapping to implement
+    in the linker script.
+    """
+    # pylint: disable=too-many-branches
+    regions = [x for x in [get_ram(dts), get_itim(dts), get_rom(dts)] if x is not None]
+
+    if len(regions) == 0:
+        print("No memory regions are available")
+        sys.exit(1)
+    elif len(regions) == 1:
+        region = regions[0]
+        if region.name != RAM_MEMORY_NAME:
+            # If we only have one region, it has to be RAM
+            region.name = RAM_MEMORY_NAME
+        ram, rom, itim = [{
+            "vma": region.name,
+            "lma": region.name
+        }] * 3
+        return [region.template_value("rwaxi")], ram, rom, itim
+    elif len(regions) == 2:
+        memories = []
+        for region in regions:
+            if region.name == ROM_MEMORY_NAME:
+                memories.append(region.template_value("rxai!w"))
+                rom = {
+                    "lma": region.name,
+                    "vma": region.name
+                }
+            elif region.name == RAM_MEMORY_NAME:
+                memories.append(region.template_value("rwai!x"))
+                ram, itim = [{
+                    "lma": ROM_MEMORY_NAME,
+                    "vma": region.name
+                }] * 2
+            else:
+                print("RAM or ROM missing")
+                sys.exit(1)
+        return memories, ram, rom, itim
+    else:
+        memories = []
+        for region in regions:
+            if region.name == ROM_MEMORY_NAME:
+                memories.append(region.template_value("rxai!w"))
+                rom = {
+                    "lma": region.name,
+                    "vma": region.name
+                }
+            elif region.name == RAM_MEMORY_NAME:
+                memories.append(region.template_value("rwai!x"))
+                ram = {
+                    "lma": ROM_MEMORY_NAME,
+                    "vma": region.name
+                }
+            elif region.name == ITIM_MEMORY_NAME:
+                memories.append(region.template_value("rwxai"))
+                itim = {
+                    "lma": ROM_MEMORY_NAME,
+                    "vma": region.name
+                }
+        return memories, ram, rom, itim
 
 def parse_arguments(argv):
     """
@@ -133,11 +196,14 @@ def get_template(parsed_args):
     env.globals["missingvalue"] = missingvalue
 
     if parsed_args.ramrodata:
-        template = env.get_template("ramrodata.lds")
+        layout = "ramrodata"
     elif parsed_args.scratchpad:
-        template = env.get_template("scratchpad.lds")
+        layout = "scratchpad"
     else:
-        template = env.get_template("default.lds")
+        layout = "default"
+
+    template = env.get_template("%s.lds" % layout)
+    print("Generating linker script with %s layout" % layout)
 
     return template
 
@@ -151,34 +217,15 @@ def main(argv):
 
     dts = pydevicetree.Devicetree.parseFile(parsed_args.dts, followIncludes=True)
 
-    if parsed_args.ramrodata:
-        layout = "ramrodata"
-    elif parsed_args.scratchpad:
-        layout = "scratchpad"
-    else:
-        layout = "default"
-    print("Generating linker script with %s layout" % layout)
-
     print("Selected memories in design:")
-    memories = [x for x in [get_ram(dts), get_itim(dts), get_rom(dts)] if x is not None]
-
-    if any([mem["name"] == "rom" for mem in memories]):
-        rom = {"vma": ROM_MEMORY_NAME, "lma": ROM_MEMORY_NAME}
-        ram = {"vma": RAM_MEMORY_NAME, "lma": ROM_MEMORY_NAME}
-    else:
-        rom = {"vma": RAM_MEMORY_NAME, "lma": RAM_MEMORY_NAME}
-        ram = {"vma": RAM_MEMORY_NAME, "lma": RAM_MEMORY_NAME}
+    memories, ram, rom, itim = get_memories(dts)
 
     text_in_itim = False
-    if any([mem["name"] == "itim" for mem in memories]):
-        itim = {"vma": ITIM_MEMORY_NAME, "lma": "itim"}
     if parsed_args.ramrodata and get_itim_size(dts) >= MAGIC_RAMRODATA_TEXT_THRESHOLD:
         text_in_itim = True
         print(".text section included in ITIM")
     elif parsed_args.ramrodata:
         print(".text section included in ROM")
-    else:
-        itim = {"vma": RAM_MEMORY_NAME, "lma": RAM_MEMORY_NAME}
 
     harts = dts.get_by_path("/cpus").children
     chosenboothart = dts.chosen("metal,boothart")
@@ -206,5 +253,4 @@ def main(argv):
     parsed_args.output.close()
 
 if __name__ == "__main__":
-    import sys
     main(sys.argv[1:])
