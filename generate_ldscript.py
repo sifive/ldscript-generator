@@ -72,7 +72,8 @@ def get_ram(dts):
     region = get_chosen_region(dts, "metal,ram", RAM_MEMORY_NAME)
     if region is not None:
         path = region.node.get_path()
-        print("\tRAM:  0x%08x-0x%08x (%s)" % (region.base, region.base+region.size, path))
+        top = region.base + region.size - 1
+        print("\tRAM:  0x%08x-0x%08x (%s)" % (region.base, top, path))
     return region
 
 def get_itim(dts):
@@ -82,7 +83,8 @@ def get_itim(dts):
     region = get_chosen_region(dts, "metal,itim", ITIM_MEMORY_NAME)
     if region is not None:
         path = region.node.get_path()
-        print("\tITIM: 0x%08x-0x%08x (%s)" % (region.base, region.base+region.size, path))
+        top = region.base + region.size - 1
+        print("\tITIM: 0x%08x-0x%08x (%s)" % (region.base, top, path))
     return region
 
 def get_itim_size(dts):
@@ -99,7 +101,8 @@ def get_rom(dts):
     region = get_chosen_region(dts, "metal,entry", ROM_MEMORY_NAME)
     if region is not None:
         path = region.node.get_path()
-        print("\tROM:  0x%08x-0x%08x (%s)" % (region.base, region.base+region.size, path))
+        top = region.base + region.size - 1
+        print("\tROM:  0x%08x-0x%08x (%s)" % (region.base, top, path))
     return region
 
 def get_memories(dts):

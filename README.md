@@ -45,15 +45,15 @@ chosen {
 };
 ```
 
-## Example Invocation:
+## Example Invocation
 
 ```
 $ ./generate_ldscript.py -d e31.dts -o metal.default.lds
 Generating linker script with default layout
 Selected memories in design:
-        RAM:  0x80000000-0x80010000 (/soc/dtim@80000000)
-        ITIM: 0x01800000-0x01802000 (/soc/itim@1800000)
-        ROM:  0x20000000-0x3fffffff (/soc/ahb-periph-port@20000000/testram@20000000)
+        RAM:  0x80000000-0x8000ffff (/soc/dtim@80000000)
+        ITIM: 0x01800000-0x01801fff (/soc/itim@1800000)
+        ROM:  0x20000000-0x3ffffffe (/soc/ahb-periph-port@20000000/testram@20000000)
 
 $ head -n 20 metal.default.lds
 /* Copyright (c) 2020 SiFive Inc. */
