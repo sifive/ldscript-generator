@@ -223,6 +223,12 @@ def main(argv):
     print("Selected memories in design:")
     memories, ram, rom, itim = get_memories(dts)
 
+    if parsed_args.scratchpad:
+        # Put all rom contents in ram
+        ram["lma"] = RAM_MEMORY_NAME
+        itim["lma"] = RAM_MEMORY_NAME
+        rom = ram
+
     text_in_itim = False
     if parsed_args.ramrodata and get_itim_size(dts) >= MAGIC_RAMRODATA_TEXT_THRESHOLD:
         text_in_itim = True
