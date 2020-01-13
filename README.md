@@ -39,10 +39,43 @@ Each of these properties is a `prop-encoded-array` with the following triplet of
 For example, the chosen node may include the following properties:
 ```
 chosen {
-		metal,entry = <&testram0 0 0>;
-		metal,itim = <&L11 0 0>;
-		metal,ram = <&L28 0 0>;
+    metal,entry = <&testram0 0 0>;
+    metal,itim = <&L11 0 0>;
+    metal,ram = <&L28 0 0>;
 };
+```
+
+## Example Invocation:
+
+```
+$ ./generate_ldscript.py -d e31.dts -o metal.default.lds
+Generating linker script with default layout
+Selected memories in design:
+        RAM:  0x80000000-0x80010000 (/soc/dtim@80000000)
+        ITIM: 0x01800000-0x01802000 (/soc/itim@1800000)
+        ROM:  0x20000000-0x3fffffff (/soc/ahb-periph-port@20000000/testram@20000000)
+
+$ head -n 20 metal.default.lds
+/* Copyright (c) 2020 SiFive Inc. */
+/* SPDX-License-Identifier: Apache-2.0 */
+OUTPUT_ARCH("riscv")
+
+
+/* Default Linker Script
+ *
+ * This is the default linker script for all Freedom Metal applications.
+ */
+
+
+ENTRY(_enter)
+
+MEMORY
+{
+    ram (rwai!x) : ORIGIN = 0x80000000, LENGTH = 0x10000
+    itim (rwxai) : ORIGIN = 0x1800000, LENGTH = 0x2000
+    rom (rxai!w) : ORIGIN = 0x20000000, LENGTH = 0x1fffffff
+    
+}
 ```
 
 ## Copyright and License
