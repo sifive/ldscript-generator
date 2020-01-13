@@ -28,22 +28,36 @@ def missingvalue(message):
     """
     raise jinja2.UndefinedError(message)
 
+def get_chosen_region(dts, chosen_property_name):
+    """Extract the requested address region from the chosen property"""
+    chosen_property = dts.chosen(chosen_property_name)
+
+    if chosen_property:
+        chosen_node = dts.get_by_reference(chosen_property[0])
+        chosen_range = chosen_property[1]
+        chosen_offset = chosen_property[2]
+
+        reg = chosen_node.get_reg()[chosen_range]
+
+        base = reg[0] - chosen_offset
+        size = reg[1] - chosen_offset
+
+        return (chosen_node, base, size)
+    return (None, None, None)
+
 def get_ram(dts):
     """
     Get the RAM from the devicetree, if one is chosen
     """
-    metal_ram = dts.chosen("metal,ram")
-    if metal_ram:
-        ram = metal_ram[0]
-        chosen_range = metal_ram[1]
-        chosen_offset = metal_ram[2]
-        reg_array = dts.get_by_reference(ram).get_reg()
-        reg = reg_array[chosen_range]
+    node, base, size = get_chosen_region(dts, "metal,ram")
+    if node:
+        path = node.get_path()
+        print("\tRAM:  0x%08x-0x%08x (%s)" % (base, base+size, path))
         return {
             "name" : RAM_MEMORY_NAME,
             "permissions" : "wxa!ri",
-            "base" : "0x%x" % (reg[0] + chosen_offset),
-            "size" : "0x%x" % (reg[1] - chosen_offset)
+            "base" : "0x%08x" % base,
+            "size" : "0x%08x" % size,
             }
     return None
 
@@ -51,18 +65,15 @@ def get_itim(dts):
     """
     Get the ITIM from the devicetree, if one is chosen
     """
-    metal_itim = dts.chosen("metal,itim")
-    if metal_itim:
-        itim = metal_itim[0]
-        chosen_range = metal_itim[1]
-        chosen_offset = metal_itim[2]
-        reg_array = dts.get_by_reference(itim).get_reg()
-        reg = reg_array[chosen_range]
+    node, base, size = get_chosen_region(dts, "metal,itim")
+    if node:
+        path = node.get_path()
+        print("\tITIM: 0x%08x-0x%08x (%s)" % (base, base+size, path))
         return {
             "name" : ITIM_MEMORY_NAME,
             "permissions" : "wxa!ri",
-            "base" : "0x%x" % (reg[0] + chosen_offset),
-            "size" : "0x%x" % (reg[1] - chosen_offset)
+            "base" : "0x%08x" % base,
+            "size" : "0x%08x" % size,
             }
     return None
 
@@ -70,32 +81,24 @@ def get_itim_size(dts):
     """
     Get the size of the ITIM, if it exists
     """
-    metal_itim = dts.chosen("metal,itim")
-    if metal_itim:
-        itim = metal_itim[0]
-        chosen_range = metal_itim[1]
-        chosen_offset = metal_itim[2]
-        reg_array = dts.get_by_reference(itim).get_reg()
-        reg = reg_array[chosen_range]
-        return reg[1] - chosen_offset
+    node, _, size = get_chosen_region(dts, "metal,itim")
+    if node:
+        return size
     return 0
 
 def get_rom(dts):
     """
     Get the ROM from the devicetree, if one is chosen
     """
-    metal_entry = dts.chosen("metal,entry")
-    if metal_entry:
-        rom = metal_entry[0]
-        chosen_range = metal_entry[1]
-        chosen_offset = metal_entry[2]
-        reg_array = dts.get_by_reference(rom).get_reg()
-        reg = reg_array[chosen_range]
+    node, base, size = get_chosen_region(dts, "metal,entry")
+    if node:
+        path = node.get_path()
+        print("\tROM:  0x%08x-0x%08x (%s)" % (base, base+size, path))
         return {
             "name" : ROM_MEMORY_NAME,
             "permissions" : "rxa!wi",
-            "base" : "0x%x" % (reg[0] + chosen_offset),
-            "size" : "0x%x" % (reg[1] - chosen_offset)
+            "base" : "0x%08x" % base,
+            "size" : "0x%08x" % size,
             }
     return None
 
@@ -148,9 +151,18 @@ def main(argv):
 
     dts = pydevicetree.Devicetree.parseFile(parsed_args.dts, followIncludes=True)
 
+    if parsed_args.ramrodata:
+        layout = "ramrodata"
+    elif parsed_args.scratchpad:
+        layout = "scratchpad"
+    else:
+        layout = "default"
+    print("Generating linker script with %s layout" % layout)
+
+    print("Selected memories in design:")
     memories = [x for x in [get_ram(dts), get_itim(dts), get_rom(dts)] if x is not None]
 
-    if get_rom(dts) is not None:
+    if any([mem["name"] == "rom" for mem in memories]):
         rom = {"vma": ROM_MEMORY_NAME, "lma": ROM_MEMORY_NAME}
         ram = {"vma": RAM_MEMORY_NAME, "lma": ROM_MEMORY_NAME}
     else:
@@ -158,10 +170,13 @@ def main(argv):
         ram = {"vma": RAM_MEMORY_NAME, "lma": RAM_MEMORY_NAME}
 
     text_in_itim = False
-    if get_itim(dts) is not None:
+    if any([mem["name"] == "itim" for mem in memories]):
         itim = {"vma": ITIM_MEMORY_NAME, "lma": "itim"}
     if parsed_args.ramrodata and get_itim_size(dts) >= MAGIC_RAMRODATA_TEXT_THRESHOLD:
         text_in_itim = True
+        print(".text section included in ITIM")
+    elif parsed_args.ramrodata:
+        print(".text section included in ROM")
     else:
         itim = {"vma": RAM_MEMORY_NAME, "lma": RAM_MEMORY_NAME}
 
