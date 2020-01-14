@@ -19,7 +19,7 @@ ENTRY(_enter)
 MEMORY
 {
     {% for memory in memories -%}
-        {{ memory.name }} ({{ memory.permissions }}) : ORIGIN = {{ memory.base }}, LENGTH = {{ memory.size }}
+        {{ memory.name }} ({{ memory.attributes }}) : ORIGIN = {{ memory.base }}, LENGTH = {{ memory.size }}
     {% else %}
         {{ missingvalue("No memories are defined, cannot render linker script!") }}
     {%- endfor %}

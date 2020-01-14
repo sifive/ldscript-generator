@@ -39,11 +39,11 @@ class Region:
         self.size = size
         self.name = name
 
-    def template_value(self, permissions):
+    def template_value(self, attributes):
         """Format as a dict for templating"""
         return {
             "name": self.name,
-            "permissions": permissions,
+            "attributes": attributes,
             "base": "0x%x" % self.base,
             "size": "0x%x" % self.size,
         }
@@ -125,12 +125,12 @@ def get_memories(dts):
             "vma": region.name,
             "lma": region.name
         }] * 3
-        return [region.template_value("rwaxi")], ram, rom, itim
+        return [region.template_value("rwxai")], ram, rom, itim
     elif len(regions) == 2:
         memories = []
         for region in regions:
             if region.name == ROM_MEMORY_NAME:
-                memories.append(region.template_value("rxai!w"))
+                memories.append(region.template_value("rxi!wa"))
                 rom = {
                     "lma": region.name,
                     "vma": region.name
@@ -149,7 +149,7 @@ def get_memories(dts):
         memories = []
         for region in regions:
             if region.name == ROM_MEMORY_NAME:
-                memories.append(region.template_value("rxai!w"))
+                memories.append(region.template_value("rxi!wa"))
                 rom = {
                     "lma": region.name,
                     "vma": region.name
