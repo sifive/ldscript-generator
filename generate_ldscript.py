@@ -2,9 +2,7 @@
 # Copyright (c) 2020 SiFive Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-"""
-Generate linker scripts from devicetree source files
-"""
+"""Generate linker scripts from devicetree source files"""
 
 import argparse
 import sys
@@ -23,10 +21,11 @@ RAM_MEMORY_NAME = "ram"
 ITIM_MEMORY_NAME = "itim"
 
 def missingvalue(message):
-    """ Raise an UndefinedError
-        This function is made available to the template so that it can report
-        when required values are not present and cause template rendering to
-        fail.
+    """
+    Raise an UndefinedError
+    This function is made available to the template so that it can report
+    when required values are not present and cause template rendering to
+    fail.
     """
     raise jinja2.UndefinedError(message)
 
@@ -66,9 +65,7 @@ def get_chosen_region(dts, chosen_property_name, name):
     return None
 
 def get_ram(dts):
-    """
-    Get the RAM from the devicetree, if one is chosen
-    """
+    """Get the RAM from the devicetree, if one is chosen"""
     region = get_chosen_region(dts, "metal,ram", RAM_MEMORY_NAME)
     if region is not None:
         path = region.node.get_path()
@@ -77,9 +74,7 @@ def get_ram(dts):
     return region
 
 def get_itim(dts):
-    """
-    Get the ITIM from the devicetree, if one is chosen
-    """
+    """Get the ITIM from the devicetree, if one is chosen"""
     region = get_chosen_region(dts, "metal,itim", ITIM_MEMORY_NAME)
     if region is not None:
         path = region.node.get_path()
@@ -95,9 +90,7 @@ def get_itim_size(dts):
     return 0
 
 def get_rom(dts):
-    """
-    Get the ROM from the devicetree, if one is chosen
-    """
+    """Get the ROM from the devicetree, if one is chosen"""
     region = get_chosen_region(dts, "metal,entry", ROM_MEMORY_NAME)
     if region is not None:
         path = region.node.get_path()
@@ -108,7 +101,7 @@ def get_rom(dts):
 def get_memories(dts):
     """
     Extract the memory regions and turn them into the mapping to implement
-    in the linker script.
+    in the linker script
     """
     # pylint: disable=too-many-branches
     regions = [x for x in [get_ram(dts), get_itim(dts), get_rom(dts)] if x is not None]
@@ -169,9 +162,7 @@ def get_memories(dts):
         return memories, ram, rom, itim
 
 def parse_arguments(argv):
-    """
-    Parse the arguments into a dictionary with argparse
-    """
+    """Parse the arguments into a dictionary with argparse"""
     arg_parser = argparse.ArgumentParser(description="Generate linker scripts from Devicetrees")
 
     arg_parser.add_argument("-d", "--dts", required=True,
@@ -188,9 +179,7 @@ def parse_arguments(argv):
     return arg_parser.parse_args(argv)
 
 def get_template(parsed_args):
-    """
-    Initialize jinja2 and return the right template
-    """
+    """Initialize jinja2 and return the right template"""
     env = jinja2.Environment(
         loader=jinja2.PackageLoader(__name__, TEMPLATES_PATH),
         )
@@ -211,9 +200,7 @@ def get_template(parsed_args):
     return template
 
 def main(argv):
-    """
-    Parse arguments, extract data, and render the linker script to file
-    """
+    """Parse arguments, extract data, and render the linker script to file"""
     parsed_args = parse_arguments(argv)
 
     template = get_template(parsed_args)
