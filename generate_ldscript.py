@@ -58,7 +58,7 @@ def get_chosen_region(dts, chosen_property_name, name):
 
         reg = chosen_node.get_reg()[chosen_range]
 
-        base = reg[0] - chosen_offset
+        base = reg[0] + chosen_offset
         size = reg[1] - chosen_offset
 
         return Region(chosen_node, base, size, name)
