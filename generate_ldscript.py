@@ -47,6 +47,12 @@ class Region:
             "size": "0x%x" % self.size,
         }
 
+    def __eq__(self, other):
+        return self.base == other.base and self.size == other.size
+
+    def __hash__(self):
+        return (self.base, self.size).__hash__()
+
 def get_chosen_region(dts, chosen_property_name, name):
     """Extract the requested address region from the chosen property"""
     chosen_property = dts.chosen(chosen_property_name)
@@ -98,6 +104,10 @@ def get_rom(dts):
         print("\tROM:  0x%08x-0x%08x (%s)" % (region.base, top, path))
     return region
 
+def drop_identical_regions(regions):
+    """Removes Regions pointing at identical regions of memory"""
+    return list(set(regions))
+
 def get_memories(dts):
     """
     Extract the memory regions and turn them into the mapping to implement
@@ -105,6 +115,7 @@ def get_memories(dts):
     """
     # pylint: disable=too-many-branches
     regions = [x for x in [get_ram(dts), get_itim(dts), get_rom(dts)] if x is not None]
+    regions = drop_identical_regions(regions)
 
     if len(regions) == 0:
         print("No memory regions are available")
