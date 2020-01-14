@@ -124,10 +124,10 @@ SECTIONS
         KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
         KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
         PROVIDE_HIDDEN (__init_array_end = .);
-        PROVIDE_HIDDEN ( metal_constructors_start = .);");
-        KEEP (*(SORT_BY_INIT_PRIORITY(.metal.init_array.*)));");
-        KEEP (*(.metal.init_array));");
-        PROVIDE_HIDDEN ( metal_constructors_end = .);");
+        PROVIDE_HIDDEN ( metal_constructors_start = .);
+        KEEP (*(SORT_BY_INIT_PRIORITY(.metal.init_array.*)));
+        KEEP (*(.metal.init_array));
+        PROVIDE_HIDDEN ( metal_constructors_end = .);
     } >{{ rom.vma }} AT>{{ rom.lma }}
 
     .fini_array : ALIGN(8) {
@@ -135,10 +135,10 @@ SECTIONS
         KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
         KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
         PROVIDE_HIDDEN (__fini_array_end = .);
-        PROVIDE_HIDDEN ( metal_destructors_start = .);");
-        KEEP (*(SORT_BY_INIT_PRIORITY(.metal.fini_array.*)));");
-        KEEP (*(.metal.fini_array));");
-        PROVIDE_HIDDEN ( metal_destructors_end = .);");
+        PROVIDE_HIDDEN ( metal_destructors_start = .);
+        KEEP (*(SORT_BY_INIT_PRIORITY(.metal.fini_array.*)));
+        KEEP (*(.metal.fini_array));
+        PROVIDE_HIDDEN ( metal_destructors_end = .);
     } >{{ rom.vma }} AT>{{ rom.lma }}
 
     .ctors : {
