@@ -246,7 +246,7 @@ def main(argv):
     values = {
         "memories" : memories,
         "default_stack_size" : "0x400",
-        "default_heap_size" : "0x400",
+        "default_heap_size" : "0x800",
         "num_harts" : len(harts),
         "boot_hart" : boot_hart,
         "chicken_bit" : 1,
