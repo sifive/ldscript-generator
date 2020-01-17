@@ -89,13 +89,7 @@ def main(argv):
     memories = get_memories(dts)
     print_memories(memories)
 
-    ram, rom, itim = get_load_map(memories)
-
-    if parsed_args.scratchpad:
-        # Put all rom contents in ram
-        ram["lma"] = "ram"
-        itim["lma"] = "ram"
-        rom = ram
+    ram, rom, itim = get_load_map(memories, scratchpad=parsed_args.scratchpad)
 
     text_in_itim = False
     if parsed_args.ramrodata and get_itim_length(memories) >= MAGIC_RAMRODATA_TEXT_THRESHOLD:
