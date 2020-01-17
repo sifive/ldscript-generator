@@ -19,7 +19,7 @@ def get_memories(tree):
     return memories
 
 
-def get_load_map(memories):
+def get_load_map(memories, scratchpad):
     """Given the list of memories in the linker script, get the lma/vma
        pairs for each of the regions in the linker script"""
     ram = dict()
@@ -40,20 +40,25 @@ def get_load_map(memories):
         else:
             itim["vma"] = "testram"
     else:
-        rom["lma"] = "rom"
-        rom["vma"] = "rom"
-        ram["lma"] = "rom"
+        if scratchpad:
+            hex_load = "ram"
+        else:
+            hex_load = "rom"
+
+        rom["lma"] = hex_load
+        rom["vma"] = hex_load
+        ram["lma"] = hex_load
         ram["vma"] = "ram"
-        itim["lma"] = "rom"
+        itim["lma"] = hex_load
 
         if "itim" in memories["rom"]["contents"]:
-            itim["vma"] = "rom"
+            itim["vma"] = hex_load
         elif "itim" in memories["ram"]["contents"]:
             itim["vma"] = "ram"
         elif "itim" in memories:
             itim["vma"] = "itim"
         else:
-            itim["vma"] = "rom"
+            itim["vma"] = hex_load
 
     return ram, rom, itim
 
