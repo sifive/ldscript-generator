@@ -15,12 +15,21 @@ venv/.stamp: venv/bin/activate requirements.txt
 venv/bin/activate:
 	python3 -m venv venv
 
-.PHONY: lint
+.PHONY: test-lint
 test-lint: virtualenv
 	. venv/bin/activate && pylint *.py
 
 .PHONY: test
 test: test-lint
+
+UNIT_TESTS = tests/test-memory-map.py
+
+.PHONY: test-unit
+test-unit: virtualenv
+	. venv/bin/activate && python -m unittest $(UNIT_TESTS)
+
+.PHONY: test
+test: test-unit
 
 clean:
 	-rm -rf venv __pycache__
