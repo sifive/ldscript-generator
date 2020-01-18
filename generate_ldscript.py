@@ -33,7 +33,7 @@ def parse_arguments(argv):
 
     arg_parser.add_argument("-d", "--dts", required=True,
                             help="The path to the Devicetree for the target")
-    arg_parser.add_argument("-o", "--output", required=True,
+    arg_parser.add_argument("-o", "--output",
                             type=argparse.FileType('w'),
                             help="The path of the linker script file to output")
     group = arg_parser.add_mutually_exclusive_group()
@@ -61,16 +61,16 @@ def get_template(parsed_args):
         layout = "default"
 
     template = env.get_template("%s.lds" % layout)
-    print("Generating linker script with %s layout" % layout)
+    print("Generating linker script with %s layout" % layout, file=sys.stderr)
 
     return template
 
 def print_memories(memories):
     """Report chosen memories to stdout"""
-    print("Using layout:")
+    print("Using layout:", file=sys.stderr)
     for _, memory in memories.items():
         end = memory["base"] + memory["length"] - 1
-        print("\t%4s: 0x%08x-0x%08x (%s)" % (memory["name"], memory["base"], end, memory["path"]))
+        print("\t%4s: 0x%08x-0x%08x (%s)" % (memory["name"], memory["base"], end, memory["path"]), file = sys.stderr)
 
 def get_itim_length(memories):
     """Get the length of the itim, if it exists"""
@@ -94,9 +94,9 @@ def main(argv):
     text_in_itim = False
     if parsed_args.ramrodata and get_itim_length(memories) >= MAGIC_RAMRODATA_TEXT_THRESHOLD:
         text_in_itim = True
-        print(".text section included in ITIM")
+        print(".text section included in ITIM", file=sys.stderr)
     elif parsed_args.ramrodata:
-        print(".text section included in ROM")
+        print(".text section included in ROM", file=sys.stderr)
 
     harts = dts.get_by_path("/cpus").children
     chosenboothart = dts.chosen("metal,boothart")
@@ -120,8 +120,11 @@ def main(argv):
         "ram" : ram,
     }
 
-    parsed_args.output.write(template.render(values))
-    parsed_args.output.close()
+    if parsed_args.output:
+        parsed_args.output.write(template.render(values))
+        parsed_args.output.close()
+    else:
+        print(template.render(values))
 
 if __name__ == "__main__":
     main(sys.argv[1:])
