@@ -56,7 +56,7 @@ SECTIONS
      * Note that depending on the memory layout, the bitness (32/64bit) of the
      * target, and the code model in use, this might cause a relocation error.
      */
-    __heap_size = DEFINED(__heap_size) ? __heap_size : {{ default_heap_size|default("0x400") }};
+    __heap_size = DEFINED(__heap_size) ? __heap_size : {{ default_heap_size|default("0x800") }};
 
     /* The boot hart sets which hart runs the pre-main initialization routines,
      * including copying .data into RAM, zeroing the BSS region, running
