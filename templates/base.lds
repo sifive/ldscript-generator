@@ -1,14 +1,17 @@
 /* Copyright (c) 2020 SiFive Inc. */
 /* SPDX-License-Identifier: Apache-2.0 */
-{# Checks to make sure that the memories are provided -#}
-{% if rom is undefined %}
-    {{ missingvalue("No memory is provided for romable sections, cannot render linker script!") }}
+{# Checks to make sure that required template values are provided #}
+{% if rom.lma is undefined or rom.vma is undefined %}
+    {{ missingvalue("Cannot render linker script, romable regions don't specify lma/vma!") }}
 {% endif %}
-{% if itim is undefined %}
-    {{ missingvalue("No memory is provided for itimable sections, cannot render linker script!") }}
+{% if itim.lma is undefined or itim.vma is undefined %}
+    {{ missingvalue("Cannot render linker script, itimable regions don't specify lma/vma!") }}
 {% endif %}
-{% if ram is undefined %}
-    {{ missingvalue("No memory is provided for ramable sections, cannot render linker script!") }}
+{% if ram.lma is undefined or ram.vma is undefined %}
+    {{ missingvalue("Cannot render linker script, ramable regions don't specify lma/vma!") }}
+{% endif %}
+{% if num_harts is undefined %}
+    {{ missingvalue("Cannot render linker script, num_harts is not specified!") }}
 {% endif %}
 OUTPUT_ARCH("riscv")
 
