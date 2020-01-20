@@ -52,6 +52,7 @@ def get_template(parsed_args):
     """Initialize jinja2 and return the right template"""
     env = jinja2.Environment(
         loader=jinja2.PackageLoader(__name__, TEMPLATES_PATH),
+        trim_blocks=True, lstrip_blocks=True,
     )
     # Make the missingvalue() function available in the template so that the
     # template fails to render if we don't provide the values it needs.
