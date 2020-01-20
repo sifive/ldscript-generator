@@ -1,7 +1,7 @@
 /* Copyright (c) 2020 SiFive Inc. */
 /* SPDX-License-Identifier: Apache-2.0 */
 {# Checks to make sure that required template values are provided #}
-{% if rom.lma is undefined or rom.vma is undefined %}
+{% if rom.vma is undefined %}
     {{ missingvalue("Cannot render linker script, romable regions don't specify lma/vma!") }}
 {% endif %}
 {% if itim.lma is undefined or itim.vma is undefined %}
@@ -87,7 +87,7 @@ SECTIONS
         KEEP (*(.text.metal.init.*))
         KEEP (*(SORT_NONE(.init)))
         KEEP (*(.text.libgloss.start))
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
 {% if not text_in_itim %}
     .text : {
@@ -95,12 +95,12 @@ SECTIONS
         *(.text.startup .text.startup.*)
         *(.text .text.*)
         *(.gnu.linkonce.t.*)
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 {% endif %}
 
     .fini : {
         KEEP (*(SORT_NONE(.fini)))
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
 {% if not ramrodata %}
     .rodata : {
@@ -113,14 +113,14 @@ SECTIONS
         *(.srodata.cst4)
         *(.srodata.cst2)
         *(.srodata .srodata.*)
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 {% endif %}
 
     .preinit_array : ALIGN(8) {
         PROVIDE_HIDDEN (__preinit_array_start = .);
         KEEP (*(.preinit_array))
         PROVIDE_HIDDEN (__preinit_array_end = .);
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
     .init_array : ALIGN(8) {
         PROVIDE_HIDDEN (__init_array_start = .);
@@ -131,7 +131,7 @@ SECTIONS
         KEEP (*(SORT_BY_INIT_PRIORITY(.metal.init_array.*)));
         KEEP (*(.metal.init_array));
         PROVIDE_HIDDEN ( metal_constructors_end = .);
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
     .fini_array : ALIGN(8) {
         PROVIDE_HIDDEN (__fini_array_start = .);
@@ -142,7 +142,7 @@ SECTIONS
         KEEP (*(SORT_BY_INIT_PRIORITY(.metal.fini_array.*)));
         KEEP (*(.metal.fini_array));
         PROVIDE_HIDDEN ( metal_destructors_end = .);
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
     .ctors : {
         KEEP (*crtbegin.o(.ctors))
@@ -151,7 +151,7 @@ SECTIONS
         KEEP (*(SORT(.ctors.*)))
         KEEP (*(.ctors))
         KEEP (*(.metal.ctors .metal.ctors.*))
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
     .dtors : {
         KEEP (*crtbegin.o(.dtors))
@@ -160,7 +160,7 @@ SECTIONS
         KEEP (*(SORT(.dtors.*)))
         KEEP (*(.dtors))
         KEEP (*(.metal.dtors .metal.dtors.*))
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
     /* ITIM SECTION
      *

@@ -27,7 +27,6 @@ def get_load_map(memories, scratchpad):
     itim = dict()
 
     if "testram" in memories:
-        rom["lma"] = "testram"
         rom["vma"] = "testram"
         ram["lma"] = "testram"
         ram["vma"] = "testram"
@@ -45,7 +44,6 @@ def get_load_map(memories, scratchpad):
         else:
             hex_load = "rom"
 
-        rom["lma"] = hex_load
         rom["vma"] = hex_load
         ram["lma"] = hex_load
         ram["vma"] = "ram"
