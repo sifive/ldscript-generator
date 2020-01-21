@@ -18,6 +18,7 @@ TEMPLATES_PATH = "templates"
 # places the text section into the ITIM
 MAGIC_RAMRODATA_TEXT_THRESHOLD = 0x8000
 
+
 def missingvalue(message):
     """
     Raise an UndefinedError
@@ -27,13 +28,15 @@ def missingvalue(message):
     """
     raise jinja2.UndefinedError(message)
 
+
 def parse_arguments(argv):
     """Parse the arguments into a dictionary with argparse"""
-    arg_parser = argparse.ArgumentParser(description="Generate linker scripts from Devicetrees")
+    arg_parser = argparse.ArgumentParser(
+        description="Generate linker scripts from Devicetrees")
 
     arg_parser.add_argument("-d", "--dts", required=True,
                             help="The path to the Devicetree for the target")
-    arg_parser.add_argument("-o", "--output", required=True,
+    arg_parser.add_argument("-o", "--output",
                             type=argparse.FileType('w'),
                             help="The path of the linker script file to output")
     group = arg_parser.add_mutually_exclusive_group()
@@ -44,11 +47,13 @@ def parse_arguments(argv):
 
     return arg_parser.parse_args(argv)
 
+
 def get_template(parsed_args):
     """Initialize jinja2 and return the right template"""
     env = jinja2.Environment(
         loader=jinja2.PackageLoader(__name__, TEMPLATES_PATH),
-        )
+        trim_blocks=True, lstrip_blocks=True,
+    )
     # Make the missingvalue() function available in the template so that the
     # template fails to render if we don't provide the values it needs.
     env.globals["missingvalue"] = missingvalue
@@ -61,16 +66,19 @@ def get_template(parsed_args):
         layout = "default"
 
     template = env.get_template("%s.lds" % layout)
-    print("Generating linker script with %s layout" % layout)
+    print("Generating linker script with %s layout" % layout, file=sys.stderr)
 
     return template
 
+
 def print_memories(memories):
     """Report chosen memories to stdout"""
-    print("Using layout:")
+    print("Using layout:", file=sys.stderr)
     for _, memory in memories.items():
         end = memory["base"] + memory["length"] - 1
-        print("\t%4s: 0x%08x-0x%08x (%s)" % (memory["name"], memory["base"], end, memory["path"]))
+        print("\t%4s: 0x%08x-0x%08x (%s)" %
+              (memory["name"], memory["base"], end, memory["path"]), file=sys.stderr)
+
 
 def get_itim_length(memories):
     """Get the length of the itim, if it exists"""
@@ -78,13 +86,15 @@ def get_itim_length(memories):
         return memories["itim"]["length"]
     return 0
 
+
 def main(argv):
     """Parse arguments, extract data, and render the linker script to file"""
     parsed_args = parse_arguments(argv)
 
     template = get_template(parsed_args)
 
-    dts = pydevicetree.Devicetree.parseFile(parsed_args.dts, followIncludes=True)
+    dts = pydevicetree.Devicetree.parseFile(
+        parsed_args.dts, followIncludes=True)
 
     memories = get_memories(dts)
     print_memories(memories)
@@ -94,9 +104,9 @@ def main(argv):
     text_in_itim = False
     if parsed_args.ramrodata and get_itim_length(memories) >= MAGIC_RAMRODATA_TEXT_THRESHOLD:
         text_in_itim = True
-        print(".text section included in ITIM")
+        print(".text section included in ITIM", file=sys.stderr)
     elif parsed_args.ramrodata:
-        print(".text section included in ROM")
+        print(".text section included in ROM", file=sys.stderr)
 
     harts = dts.get_by_path("/cpus").children
     chosenboothart = dts.chosen("metal,boothart")
@@ -108,20 +118,24 @@ def main(argv):
         boot_hart = 0
 
     values = {
-        "memories" : list(memories.values()),
-        "default_stack_size" : "0x400",
-        "default_heap_size" : "0x800",
-        "num_harts" : len(harts),
-        "boot_hart" : boot_hart,
-        "chicken_bit" : 1,
-        "text_in_itim" : text_in_itim,
-        "rom" : rom,
-        "itim" : itim,
-        "ram" : ram,
+        "memories": list(memories.values()),
+        "default_stack_size": "0x400",
+        "default_heap_size": "0x800",
+        "num_harts": len(harts),
+        "boot_hart": boot_hart,
+        "chicken_bit": 1,
+        "text_in_itim": text_in_itim,
+        "rom": rom,
+        "itim": itim,
+        "ram": ram,
     }
 
-    parsed_args.output.write(template.render(values))
-    parsed_args.output.close()
+    if parsed_args.output:
+        parsed_args.output.write(template.render(values))
+        parsed_args.output.close()
+    else:
+        print(template.render(values))
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

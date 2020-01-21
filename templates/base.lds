@@ -1,15 +1,18 @@
 /* Copyright (c) 2020 SiFive Inc. */
 /* SPDX-License-Identifier: Apache-2.0 */
-{# Checks to make sure that the memories are provided -#}
-{% if rom is undefined %}
-    {{ missingvalue("No memory is provided for romable sections, cannot render linker script!") }}
-{% endif -%}
-{% if itim is undefined %}
-    {{ missingvalue("No memory is provided for itimable sections, cannot render linker script!") }}
-{% endif -%}
-{% if ram is undefined %}
-    {{ missingvalue("No memory is provided for ramable sections, cannot render linker script!") }}
-{% endif -%}
+{# Checks to make sure that required template values are provided #}
+{% if rom.vma is undefined %}
+    {{ missingvalue("Cannot render linker script, romable regions don't specify lma/vma!") }}
+{% endif %}
+{% if itim.lma is undefined or itim.vma is undefined %}
+    {{ missingvalue("Cannot render linker script, itimable regions don't specify lma/vma!") }}
+{% endif %}
+{% if ram.lma is undefined or ram.vma is undefined %}
+    {{ missingvalue("Cannot render linker script, ramable regions don't specify lma/vma!") }}
+{% endif %}
+{% if num_harts is undefined %}
+    {{ missingvalue("Cannot render linker script, num_harts is not specified!") }}
+{% endif %}
 OUTPUT_ARCH("riscv")
 
 {% block description %}{% endblock %}
@@ -18,11 +21,11 @@ ENTRY(_enter)
 
 MEMORY
 {
-    {% for memory in memories -%}
-        {{ memory.name }} ({{ memory.attributes }}) : ORIGIN = {{ memory.base_hex }}, LENGTH = {{ memory.length_hex }}
-    {% else %}
-        {{ missingvalue("No memories are defined, cannot render linker script!") }}
-    {%- endfor %}
+{% for memory in memories %}
+    {{ memory.name }} ({{ memory.attributes }}) : ORIGIN = {{ memory.base_hex }}, LENGTH = {{ memory.length_hex }}
+{% else %}
+    {{ missingvalue("No memories are defined, cannot render linker script!") }}
+{% endfor %}
 }
 
 SECTIONS
@@ -56,7 +59,7 @@ SECTIONS
      * Note that depending on the memory layout, the bitness (32/64bit) of the
      * target, and the code model in use, this might cause a relocation error.
      */
-    __heap_size = DEFINED(__heap_size) ? __heap_size : {{ default_heap_size|default("0x400") }};
+    __heap_size = DEFINED(__heap_size) ? __heap_size : {{ default_heap_size|default("0x800") }};
 
     /* The boot hart sets which hart runs the pre-main initialization routines,
      * including copying .data into RAM, zeroing the BSS region, running
@@ -84,7 +87,7 @@ SECTIONS
         KEEP (*(.text.metal.init.*))
         KEEP (*(SORT_NONE(.init)))
         KEEP (*(.text.libgloss.start))
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
 {% if not text_in_itim %}
     .text : {
@@ -92,12 +95,12 @@ SECTIONS
         *(.text.startup .text.startup.*)
         *(.text .text.*)
         *(.gnu.linkonce.t.*)
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 {% endif %}
 
     .fini : {
         KEEP (*(SORT_NONE(.fini)))
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
 {% if not ramrodata %}
     .rodata : {
@@ -110,14 +113,14 @@ SECTIONS
         *(.srodata.cst4)
         *(.srodata.cst2)
         *(.srodata .srodata.*)
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 {% endif %}
 
     .preinit_array : ALIGN(8) {
         PROVIDE_HIDDEN (__preinit_array_start = .);
         KEEP (*(.preinit_array))
         PROVIDE_HIDDEN (__preinit_array_end = .);
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
     .init_array : ALIGN(8) {
         PROVIDE_HIDDEN (__init_array_start = .);
@@ -128,7 +131,7 @@ SECTIONS
         KEEP (*(SORT_BY_INIT_PRIORITY(.metal.init_array.*)));
         KEEP (*(.metal.init_array));
         PROVIDE_HIDDEN ( metal_constructors_end = .);
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
     .fini_array : ALIGN(8) {
         PROVIDE_HIDDEN (__fini_array_start = .);
@@ -139,7 +142,7 @@ SECTIONS
         KEEP (*(SORT_BY_INIT_PRIORITY(.metal.fini_array.*)));
         KEEP (*(.metal.fini_array));
         PROVIDE_HIDDEN ( metal_destructors_end = .);
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
     .ctors : {
         KEEP (*crtbegin.o(.ctors))
@@ -148,7 +151,7 @@ SECTIONS
         KEEP (*(SORT(.ctors.*)))
         KEEP (*(.ctors))
         KEEP (*(.metal.ctors .metal.ctors.*))
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
     .dtors : {
         KEEP (*crtbegin.o(.dtors))
@@ -157,7 +160,7 @@ SECTIONS
         KEEP (*(SORT(.dtors.*)))
         KEEP (*(.dtors))
         KEEP (*(.metal.dtors .metal.dtors.*))
-    } >{{ rom.vma }} AT>{{ rom.lma }}
+    } >{{ rom.vma }}
 
     /* ITIM SECTION
      *
@@ -170,7 +173,7 @@ SECTIONS
      */
 
     .itim : ALIGN(8) {
-{%- if text_in_itim %}
+{% if text_in_itim %}
         /* The .text sections are placed in the ITIM to improve the performance
          * of all post-init and non-constructor application code. Note that
          * this may cause the program to fail to link if the ITIM is not large
@@ -198,7 +201,7 @@ SECTIONS
     .data : ALIGN(8) {
         *(.data .data.*)
         *(.gnu.linkonce.d.*)
-{%- if ramrodata %}
+{% if ramrodata %}
         /* Read-only data is placed in RAM to improve performance, since
          * read-only memory generally has higher latency than RAM */
         *(.rdata)
@@ -210,7 +213,7 @@ SECTIONS
         *(.sdata .sdata.* .sdata2.*)
         *(.gnu.linkonce.s.*)
         . = ALIGN(8);
-{%- if ramrodata %}
+{% if ramrodata %}
         *(.srodata.cst16)
         *(.srodata.cst8)
         *(.srodata.cst4)
@@ -239,9 +242,9 @@ SECTIONS
         PROVIDE(metal_segment_stack_begin = .);
         . = __stack_size; /* Hart 0 */
         PROVIDE( _sp = . );
-{%- for hart in range(num_harts - 1) %}
+{% for hart in range(num_harts - 1) %}
         . = __stack_size; /* Hart {{ hart + 1 }} */
-{%- endfor %}
+{% endfor %}
         PROVIDE(metal_segment_stack_end = .);
     } >{{ ram.vma }}
 
