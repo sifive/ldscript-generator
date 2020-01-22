@@ -240,10 +240,10 @@ SECTIONS
 
     .stack : {
         PROVIDE(metal_segment_stack_begin = .);
-        . = __stack_size; /* Hart 0 */
+        . += __stack_size; /* Hart 0 */
         PROVIDE( _sp = . );
 {% for hart in range(num_harts - 1) %}
-        . = __stack_size; /* Hart {{ hart + 1 }} */
+        . += __stack_size; /* Hart {{ hart + 1 }} */
 {% endfor %}
         PROVIDE(metal_segment_stack_end = .);
     } >{{ ram.vma }}
