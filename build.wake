@@ -1,0 +1,70 @@
+tuple LdScriptGeneratorOptions =
+  global TopDTSFile:    Path
+  global OtherDTSFiles: List Path
+  global OutputFile:    String
+  # Scratchpad mode places the entire binary contents into the memory
+  # selected by metal,ram in the chosen node.
+  global Scratchpad:    Boolean
+  # Ramrodata mode places all read-only data into writable memory under
+  # the assumption that this decreases read latency for benchmarks.
+  # Also, if the memory selected by metal,itim is large enough, this places
+  # all non-init text into the ITIM.
+  global Ramrodata:     Boolean
+
+# Instead of copying the script sources into build/{here}, we'll just
+# execute directly out of the package directory, since nothing gets
+# modified during execution.
+#
+# The virtualenv does get placed in build/{here} by
+# addPythonRequirementsEnv, along with a copy of requirements.txt
+def generatorDir = here
+
+#######################################################################
+# makeLdScriptGeneratorOptions takes the following parameters:
+#   - topDTSFile: The top-level Devicetree source file
+#   - otherDTSFiles: any other Devicetree source files included in the
+#                    heirarchy of Devicetree source files
+#   - outputFile: A string representing the path of the output file to
+#                 produce
+#######################################################################
+global def makeLdScriptGeneratorOptions topDTSFile otherDTSFiles outputFile =
+  LdScriptGeneratorOptions topDTSFile otherDTSFiles outputFile False False
+
+global def runLdScriptGenerator options =
+  def topDTSFile = options.getLdScriptGeneratorOptionsTopDTSFile
+  def otherDTSFiles = options.getLdScriptGeneratorOptionsOtherDTSFiles
+
+  def inputs =
+    # During execution, the generator needs access to both
+    # Python sources and the linker script template files
+    def generatorSources = sources here `.*\.(py|lds)`
+    def dtsSources = topDTSFile, otherDTSFiles
+    generatorSources ++ dtsSources
+
+  def outputs = options.getLdScriptGeneratorOptionsOutputFile, Nil
+
+  def args =
+    def base =
+      "-d", topDTSFile.getPathName,
+      "-o", options.getLdScriptGeneratorOptionsOutputFile,
+      Nil
+
+    def scratchpad = match options.getLdScriptGeneratorOptionsScratchpad
+      True  = "--scratchpad", Nil
+      False = Nil
+
+    def ramrodata = match options.getLdScriptGeneratorOptionsRamrodata
+      True  = "--ramrodata", Nil
+      False = Nil
+
+    base ++ scratchpad ++ ramrodata
+
+  makePlan (pythonCommand "{generatorDir}/generate_ldscript.py" args) inputs
+  | addPlanRelativePath "PYTHONPATH" generatorDir
+  | addPythonRequirementsEnv generatorDir
+  | setPlanFnOutputs (\_ outputs)
+  | runJob
+
+# This allows the python virtualenv to be created prior to running a build
+# with `wake preinstall Unit`.
+publish preinstall = (pythonRequirementsInstaller generatorDir), Nil
