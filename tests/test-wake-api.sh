@@ -12,9 +12,9 @@ SCRATCHPAD_OUTPUT="${OUTPUT_PATH}/metal.scratchpad.lds"
 
 wake --init .
 
-wake -v "runLdScriptGenerator (makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) \"${DEFAULT_OUTPUT}\")"
-wake -v "runLdScriptGenerator ((makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) \"${RAMRODATA_OUTPUT}\") | setLdScriptGeneratorOptionsRamrodata True)"
-wake -v "runLdScriptGenerator ((makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) \"${SCRATCHPAD_OUTPUT}\") | setLdScriptGeneratorOptionsScratchpad True)"
+wake -v "runLdScriptGenerator (makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) LDSCRIPT_DEFAULT \"${DEFAULT_OUTPUT}\")"
+wake -v "runLdScriptGenerator (makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) LDSCRIPT_RAMRODATA \"${RAMRODATA_OUTPUT}\")"
+wake -v "runLdScriptGenerator (makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) LDSCRIPT_SCRATCHPAD \"${SCRATCHPAD_OUTPUT}\")"
 
 OUTPUTS=($DEFAULT_OUTPUT $RAMRODATA_OUTPUT $SCRATCHPAD_OUTPUT )
 for file in ${OUTPUTS[@]}; do

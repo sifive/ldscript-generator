@@ -2,14 +2,20 @@ tuple LdScriptGeneratorOptions =
   global TopDTSFile:    Path
   global OtherDTSFiles: List Path
   global OutputFile:    String
+  global Layout:        LdScriptLayout
+
+global data LdScriptLayout =
+  # The default mode tries to strike a good balance for all use-cases.
+  # If you don't need scratchpad or ramrodata modes, use the default one.
+  LDSCRIPT_DEFAULT
   # Scratchpad mode places the entire binary contents into the memory
   # selected by metal,ram in the chosen node.
-  global Scratchpad:    Boolean
+  LDSCRIPT_SCRATCHPAD
   # Ramrodata mode places all read-only data into writable memory under
   # the assumption that this decreases read latency for benchmarks.
   # Also, if the memory selected by metal,itim is large enough, this places
   # all non-init text into the ITIM.
-  global Ramrodata:     Boolean
+  LDSCRIPT_RAMRODATA
 
 # Instead of copying the script sources into build/{here}, we'll just
 # execute directly out of the package directory, since nothing gets
@@ -24,11 +30,13 @@ def generatorDir = here
 #   - topDTSFile: The top-level Devicetree source file
 #   - otherDTSFiles: any other Devicetree source files included in the
 #                    heirarchy of Devicetree source files
+#   - layout: one of {LDSCRIPT_DEFAULT, LDSCRIPT_SCRATCHPAD,
+#                     LDSCRIPT_RAMRODATA}
 #   - outputFile: A string representing the path of the output file to
 #                 produce
 #######################################################################
-global def makeLdScriptGeneratorOptions topDTSFile otherDTSFiles outputFile =
-  LdScriptGeneratorOptions topDTSFile otherDTSFiles outputFile False False
+global def makeLdScriptGeneratorOptions topDTSFile otherDTSFiles layout outputFile =
+  LdScriptGeneratorOptions topDTSFile otherDTSFiles outputFile layout
 
 global def runLdScriptGenerator options =
   def topDTSFile = options.getLdScriptGeneratorOptionsTopDTSFile
@@ -49,15 +57,10 @@ global def runLdScriptGenerator options =
       "-o", options.getLdScriptGeneratorOptionsOutputFile,
       Nil
 
-    def scratchpad = match options.getLdScriptGeneratorOptionsScratchpad
-      True  = "--scratchpad", Nil
-      False = Nil
-
-    def ramrodata = match options.getLdScriptGeneratorOptionsRamrodata
-      True  = "--ramrodata", Nil
-      False = Nil
-
-    base ++ scratchpad ++ ramrodata
+    match options.getLdScriptGeneratorOptionsLayout
+      LDSCRIPT_DEFAULT    = base
+      LDSCRIPT_SCRATCHPAD = "--scratchpad", base
+      LDSCRIPT_RAMRODATA  = "--ramrodata", base
 
   makePlan (pythonCommand "{generatorDir}/generate_ldscript.py" args) inputs
   | addPlanRelativePath "PYTHONPATH" generatorDir
