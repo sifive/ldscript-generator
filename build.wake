@@ -29,7 +29,7 @@ def generatorDir = here
 # makeLdScriptGeneratorOptions takes the following parameters:
 #   - topDTSFile: The top-level Devicetree source file
 #   - otherDTSFiles: any other Devicetree source files included in the
-#                    heirarchy of Devicetree source files
+#                    hierarchy of Devicetree source files
 #   - layout: one of {LDSCRIPT_DEFAULT, LDSCRIPT_SCRATCHPAD,
 #                     LDSCRIPT_RAMRODATA}
 #   - outputFile: A string representing the path of the output file to
