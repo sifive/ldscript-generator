@@ -71,3 +71,30 @@ global def runLdScriptGenerator options =
 # This allows the python virtualenv to be created prior to running a build
 # with `wake preinstall Unit`.
 publish preinstall = (pythonRequirementsInstaller generatorDir), Nil
+
+global def ldscriptGeneratorBuildTarget =
+  baseBuildTargetPlan "ldscript-generator"
+  | dependsOnFn "topDTSFile" (_)
+  | dependsOnFn "otherDTSFiles" jNestedArrayMap
+  | dependsOn "layout" (jStringEnum (
+    "default" → LDSCRIPT_DEFAULT,
+    "scratchpath" → LDSCRIPT_SCRATCHPAD,
+    "ramrodata" → LDSCRIPT_RAMRODATA,
+    Nil
+  ))
+  | dependsOn "outputFile" jString
+  | definedAs (
+    \topDTSFile
+    \otherDTSFiles
+    \layout
+    \outputFile
+    \_
+    makeLdScriptGeneratorOptions topDTSFile otherDTSFiles layout outputFile
+    | runLdScriptGenerator
+    | getJobOutput
+    | getPathResult
+  )
+  | exports bPath
+  | makeBuildTarget
+
+publish buildTargets = ldscriptGeneratorBuildTarget, Nil
