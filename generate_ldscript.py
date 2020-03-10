@@ -117,8 +117,13 @@ def main(argv):
     else:
         boot_hart = 0
 
+    # Pass sorted memories to the template generator so that the generated linker
+    # script is reproducible.
+    sorted_memories = list(memories.values())
+    sorted_memories.sort(key=lambda m: m["name"])
+
     values = {
-        "memories": list(memories.values()),
+        "memories": sorted_memories,
         "default_stack_size": "0x400",
         "default_heap_size": "0x800",
         "num_harts": len(harts),
