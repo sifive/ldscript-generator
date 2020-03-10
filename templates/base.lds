@@ -35,7 +35,7 @@ SECTIONS
      *
      *     -Xlinker --defsym=__stack_size=0xf00
      *
-     * where 0xf00 can be replaced with the value of your choice.
+     * where 0xf00 can be replaced with a multiple of 16 of your choice.
      *
      * __stack_size is PROVIDE-ed as a symbol so that initialization code
      * initializes the stack pointers for each hart at the right offset from
@@ -237,7 +237,7 @@ SECTIONS
     PROVIDE( metal_segment_bss_target_start = ADDR(.bss) );
     PROVIDE( metal_segment_bss_target_end = ADDR(.bss) + SIZEOF(.bss) );
 
-    .stack : {
+    .stack : ALIGN(16) {
         PROVIDE(metal_segment_stack_begin = .);
         . += __stack_size; /* Hart 0 */
         PROVIDE( _sp = . );
