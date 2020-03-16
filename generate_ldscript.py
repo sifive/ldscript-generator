@@ -44,6 +44,8 @@ def parse_arguments(argv):
                        help="Emits a linker script with the scratchpad layout")
     group.add_argument("--ramrodata", action="store_true",
                        help="Emits a linker script with the ramrodata layout")
+    group.add_argument("--freertos", action="store_true",
+                       help="Emits a linker script with the freertos layout")
 
     return arg_parser.parse_args(argv)
 
@@ -62,6 +64,8 @@ def get_template(parsed_args):
         layout = "ramrodata"
     elif parsed_args.scratchpad:
         layout = "scratchpad"
+    elif parsed_args.freertos:
+        layout = "freertos"
     else:
         layout = "default"
 

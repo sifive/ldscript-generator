@@ -61,6 +61,7 @@ global def runLdScriptGenerator options =
       LDSCRIPT_DEFAULT    = base
       LDSCRIPT_SCRATCHPAD = "--scratchpad", base
       LDSCRIPT_RAMRODATA  = "--ramrodata", base
+      LDSCRIPT_FREERTOS  = "--freertos", base
 
   makePlan (pythonCommand "{generatorDir}/generate_ldscript.py" args) inputs
   | addPlanRelativePath "PYTHONPATH" generatorDir

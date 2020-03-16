@@ -121,15 +121,12 @@ SECTIONS
         PROVIDE_HIDDEN ( metal_destructors_end = .);
     } >{{ rom.vma }}
 
-	.privileged_functions : ALIGN (4) {
-        __privileged_functions_start__ = .;
-        KEEP(*(privileged_functions))
-        . = ALIGN(4);
-		__privileged_functions_end__ = .;
-	} >{{ rom.vma }}
+{% block privileged_function_section %}{% endblock %} 
 
     .ctors : {
+        {% if privilege_en %}
         __unprivileged_section_start__ = .;
+        {% endif %}
         KEEP (*crtbegin.o(.ctors))
         KEEP (*crtbegin?.o(.ctors))
         KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .ctors))
@@ -145,7 +142,7 @@ SECTIONS
         KEEP (*(SORT(.dtors.*)))
         KEEP (*(.dtors))
         KEEP (*(.metal.dtors .metal.dtors.*))
-        {% if ramrodata and text_in_itim %}
+        {% if ramrodata and text_in_itim and privilege_en %}
         __unprivileged_section_end__ = .;
         {% endif %}
     } >{{ rom.vma }}
@@ -156,7 +153,7 @@ SECTIONS
         *(.text.startup .text.startup.*)
         *(.text .text.*)
         *(.gnu.linkonce.t.*)
-        {% if ramrodata %}
+        {% if ramrodata and privilege_en %}
         __unprivileged_section_end__ = .;
         {% endif %}
     } >{{ rom.vma }}
@@ -173,7 +170,10 @@ SECTIONS
         *(.srodata.cst4)
         *(.srodata.cst2)
         *(.srodata .srodata.*)
+        {% if privilege_en %}
         __unprivileged_section_end__ = .;
+        {% endif %}
+
     } >{{ rom.vma }}
 {% endif %}
 
@@ -214,7 +214,9 @@ SECTIONS
      */
 
     .data : ALIGN(8) {
+        {% if privilege_en %}
         __unprivileged_data_section_start__ = .;
+        {% endif %}
         *(.data .data.*)
         *(.gnu.linkonce.d.*)
         . = ALIGN(8);
@@ -247,21 +249,16 @@ SECTIONS
         *(.bss .bss.*)
         *(.gnu.linkonce.b.*)
         *(COMMON)
+{% if privilege_en %}
         __unprivileged_data_section_end__ = .;
+{% endif %}
     } >{{ ram.vma }}
 
     PROVIDE( metal_segment_bss_source_start = LOADADDR(.bss) );
     PROVIDE( metal_segment_bss_target_start = ADDR(.bss) );
     PROVIDE( metal_segment_bss_target_end = ADDR(.bss) + SIZEOF(.bss) );
 
-    .privileged_data (NOLOAD) : ALIGN(8) {
-        __privileged_data_start__ = .;
-		*(privileged_data)
-		/* Non kernel data is kept out of the first _Privileged_Data_Region_Size
-		bytes of SRAM. */
-        . = ALIGN(4);
-		__privileged_data_end__ = .;
-	} >{{ ram.vma }}
+{% block privileged_data_section %}{% endblock %} 
 
     .stack (NOLOAD) : ALIGN(16) {
         PROVIDE(metal_segment_stack_begin = .);
