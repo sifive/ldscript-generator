@@ -45,7 +45,7 @@ def parse_arguments(argv):
     group.add_argument("--ramrodata", action="store_true",
                        help="Emits a linker script with the ramrodata layout")
     group.add_argument("--freertos", action="store_true",
-                       help="Emits a linker script with the freertos layout")
+                       help="Emits a linker script with specific layout for freertos")
 
     return arg_parser.parse_args(argv)
 
