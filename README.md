@@ -18,6 +18,7 @@ optional arguments:
                         The path of the linker script file to output
   --scratchpad          Emits a linker script with the scratchpad layout
   --ramrodata           Emits a linker script with the ramrodata layout
+  --freertos            Emits a linker script with specific layout for freertos
 ```
 
 ## Required Devicetree Properties

@@ -16,6 +16,9 @@ global data LdScriptLayout =
   # Also, if the memory selected by metal,itim is large enough, this places
   # all non-init text into the ITIM.
   LDSCRIPT_RAMRODATA
+  # This layout is used for freertos use when pmp is need, it introduce symbole
+  # and sections for memory isolation (based on defauult lds)
+  LDSCRIPT_FREERTOS
 
 # Instead of copying the script sources into build/{here}, we'll just
 # execute directly out of the package directory, since nothing gets
@@ -61,6 +64,7 @@ global def runLdScriptGenerator options =
       LDSCRIPT_DEFAULT    = base
       LDSCRIPT_SCRATCHPAD = "--scratchpad", base
       LDSCRIPT_RAMRODATA  = "--ramrodata", base
+      LDSCRIPT_FREERTOS  = "--freertos", base
 
   makePlan (pythonCommand "{generatorDir}/generate_ldscript.py" args) inputs
   | addPlanRelativePath "PYTHONPATH" generatorDir
