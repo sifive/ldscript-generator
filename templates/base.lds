@@ -28,6 +28,14 @@ MEMORY
 {% endfor %}
 }
 
+PHDRS
+{
+    rom PT_LOAD;
+    ram_init PT_LOAD;
+    tls PT_TLS;
+    ram PT_LOAD;
+}
+
 SECTIONS
 {
     /* Each hart is allocated its own stack of size __stack_size. This value
@@ -87,17 +95,17 @@ SECTIONS
         KEEP (*(.text.metal.init.*))
         KEEP (*(SORT_NONE(.init)))
         KEEP (*(.text.libgloss.start))
-    } >{{ rom.vma }}
+    } >{{ rom.vma }} :rom
 
     .fini : {
         KEEP (*(SORT_NONE(.fini)))
-    } >{{ rom.vma }}
+    } >{{ rom.vma }} :rom
 
     .preinit_array : ALIGN(8) {
         PROVIDE_HIDDEN (__preinit_array_start = .);
         KEEP (*(.preinit_array))
         PROVIDE_HIDDEN (__preinit_array_end = .);
-    } >{{ rom.vma }}
+    } >{{ rom.vma }} :rom
 
     .init_array : ALIGN(8) {
         PROVIDE_HIDDEN (__init_array_start = .);
@@ -108,7 +116,7 @@ SECTIONS
         KEEP (*(SORT_BY_INIT_PRIORITY(.metal.init_array.*)));
         KEEP (*(.metal.init_array));
         PROVIDE_HIDDEN ( metal_constructors_end = .);
-    } >{{ rom.vma }}
+    } >{{ rom.vma }} :rom
 
     .fini_array : ALIGN(8) {
         PROVIDE_HIDDEN (__fini_array_start = .);
@@ -119,7 +127,7 @@ SECTIONS
         KEEP (*(SORT_BY_INIT_PRIORITY(.metal.fini_array.*)));
         KEEP (*(.metal.fini_array));
         PROVIDE_HIDDEN ( metal_destructors_end = .);
-    } >{{ rom.vma }}
+    } >{{ rom.vma }} :rom
 
 {% block privileged_function_section %}{% endblock %} 
 
@@ -133,7 +141,7 @@ SECTIONS
         KEEP (*(SORT(.ctors.*)))
         KEEP (*(.ctors))
         KEEP (*(.metal.ctors .metal.ctors.*))
-    } >{{ rom.vma }}
+    } >{{ rom.vma }} :rom
 
     .dtors : {
         KEEP (*crtbegin.o(.dtors))
@@ -145,7 +153,7 @@ SECTIONS
         {% if ramrodata and text_in_itim and privilege_en %}
         __unprivileged_section_end__ = .;
         {% endif %}
-    } >{{ rom.vma }}
+    } >{{ rom.vma }} : rom
 
 {% if not text_in_itim %}
     .text : {
@@ -156,7 +164,7 @@ SECTIONS
         {% if ramrodata and privilege_en %}
         __unprivileged_section_end__ = .;
         {% endif %}
-    } >{{ rom.vma }}
+    } >{{ rom.vma }} :rom
 {% endif %}
 
 {% if not ramrodata %}
@@ -174,7 +182,7 @@ SECTIONS
         __unprivileged_section_end__ = .;
         {% endif %}
 
-    } >{{ rom.vma }}
+    } >{{ rom.vma }} :rom
 {% endif %}
 
     /* ITIM SECTION
@@ -199,7 +207,7 @@ SECTIONS
         *(.gnu.linkonce.t.*)
 {% endif %}
         *(.itim .itim.*)
-    } >{{ itim.vma }} AT>{{ itim.lma }}
+    } >{{ itim.vma }} AT>{{ itim.lma }} :rom
 
     PROVIDE( metal_segment_itim_source_start = LOADADDR(.itim) );
     PROVIDE( metal_segment_itim_target_start = ADDR(.itim) );
@@ -237,11 +245,31 @@ SECTIONS
         *(.rodata .rodata.*)
         *(.gnu.linkonce.r.*)
 {% endif %}
-    } >{{ ram.vma }} AT>{{ ram.lma }}
+    } >{{ ram.vma }} AT>{{ ram.lma }} :ram_init
+
+    .tdata : {
+        PROVIDE( __tls_base = . );
+	*(.tdata .tdata.* .gnu.linkonce.td.*)
+    } >{{ ram.vma }} AT>{{ ram.lma }} :tls :ram_init
+
+    PROVIDE( __tdata_source = LOADADDR(.tdata) );
+    PROVIDE( __tdata_size = SIZEOF(.tdata) );
 
     PROVIDE( metal_segment_data_source_start = LOADADDR(.data) );
     PROVIDE( metal_segment_data_target_start = ADDR(.data) );
-    PROVIDE( metal_segment_data_target_end = ADDR(.data) + SIZEOF(.data) );
+    PROVIDE( metal_segment_data_target_end = ADDR(.tdata) + SIZEOF(.tdata) );
+
+    .tbss : {
+	*(.tbss .tbss.* .gnu.linkonce.tb.*)
+	*(.tcommon .tcommon.*)
+	PROVIDE( __tls_end = . );
+    } >{{ ram.vma }} AT>{{ ram.vma }} :tls :ram
+    PROVIDE( __tbss_size = SIZEOF(.tbss) );
+    PROVIDE( __tls_size = __tls_end - __tls_base );
+
+    .tbss_space : {
+	. = . + __tbss_size;
+    } >{{ ram.vma }} :ram
 
     .bss (NOLOAD): ALIGN(8) {
         *(.sbss*)
@@ -252,10 +280,10 @@ SECTIONS
 {% if privilege_en %}
         __unprivileged_data_section_end__ = .;
 {% endif %}
-    } >{{ ram.vma }}
+    } >{{ ram.vma }} :ram
 
-    PROVIDE( metal_segment_bss_source_start = LOADADDR(.bss) );
-    PROVIDE( metal_segment_bss_target_start = ADDR(.bss) );
+    PROVIDE( metal_segment_bss_source_start = LOADADDR(.tbss) );
+    PROVIDE( metal_segment_bss_target_start = ADDR(.tbss) );
     PROVIDE( metal_segment_bss_target_end = ADDR(.bss) + SIZEOF(.bss) );
 
 {% block privileged_data_section %}{% endblock %} 
@@ -268,7 +296,7 @@ SECTIONS
         . += __stack_size; /* Hart {{ hart + 1 }} */
 {% endfor %}
         PROVIDE(metal_segment_stack_end = .);
-    } >{{ ram.vma }}
+    } >{{ ram.vma }} :ram
 
     .heap (NOLOAD) : ALIGN(4) {
         PROVIDE( metal_segment_heap_target_start = . );
@@ -277,5 +305,5 @@ SECTIONS
         . = DEFINED(__heap_max) ? MIN( LENGTH(ram) - ( . - ORIGIN(ram)) , 0x10000000) : __heap_size;
         PROVIDE( metal_segment_heap_target_end = . );
         PROVIDE( _heap_end = . );
-    } >{{ ram.vma }}
+    } >{{ ram.vma }} :ram
 }
