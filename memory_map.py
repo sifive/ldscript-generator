@@ -4,7 +4,68 @@
 
 """Functions for converting Devicetrees to the template parameterization"""
 
+import re
 import sys
+
+def get_ram_memories(tree):
+    """Given a Devicetree, get the list of ram memories to describe in the
+       linker script"""
+
+    # RAMs (TIM, LIM, ILS, DLS, main memory) that may have ECC protection
+    # define ram list filters
+    itim_count = 0
+    dtim_count = 0
+    sram_count = 0
+    ils_count = 0
+    dls_count = 0
+    memory_count = 0
+
+    memories = dict()
+    # Get a list of RAM nodes with node as the its key
+    for node in list(tree.all_nodes()):
+        if any([re.compile("itim").search(node.name), \
+                re.compile("dtim").search(node.name), \
+                re.compile("sys-sram").search(node.name), \
+                re.compile("ils").search(node.name),  \
+                re.compile("dls").search(node.name), \
+                node.name == 'memory']):
+
+            name = node.name.replace('-', '_')
+            if name.isalpha():
+                name += '_'
+                if re.compile("itim").search(node.name):
+                    name += str(itim_count)
+                    itim_count += 1
+                elif re.compile("dtim").search(node.name):
+                    name += str(dtim_count)
+                    dtim_count += 1
+                elif re.compile("sys-sram").search(node.name):
+                    name += str(sram_count)
+                    sram_count += 1
+                elif re.compile("ils").search(node.name):
+                    name += str(ils_count)
+                    ils_count += 1
+                elif re.compile("dls").search(node.name):
+                    name += str(dls_count)
+                    dls_count += 1
+                else:
+                    name += str(memory_count)
+                    memory_count += 1
+
+            region = dict()
+            region.update(name=name, node=node, path=node.get_path(), \
+                          region=0, offset=0)
+            memories.update({name : region})
+
+    if len(memories) == 0:
+        print("ERROR: No RAM is not defined by the Devicetree")
+        sys.exit(1)
+
+    compute_address_ranges(memories)
+    memories = consolidate_address_ranges(memories)
+    format_hex(memories)
+
+    return memories
 
 
 def get_memories(tree):
@@ -94,6 +155,44 @@ def get_chosen_regions(tree):
         print("ERROR: metal,ram is not defined by the Devicetree")
         sys.exit(1)
     return regions
+
+
+def consolidate_address_ranges(regions):
+    """Given the requested regions, consolidate the region address ranges
+       if they are contiguous"""
+    sorted_list = list(regions.values())
+    sorted_list.sort(key=lambda m: m["base"])
+    print("RAM memories:", file=sys.stderr)
+    for memory in sorted_list:
+        print("\t%4s: 0x%08x-0x%08x" %
+              (memory["name"], memory["base"], memory["length"]), file=sys.stderr)
+
+    removal_list = []
+    base = dict()
+    base.update(name="", node=None, path="", region=0, offset=0)
+    for region in sorted_list:
+        if base["node"] is not None:
+            if region["base"] == (base["base"] + base["length"]):
+                # Next region is a continual from last, merge with current
+                base["length"] += region["length"]
+                removal_list.append(region)
+            else:
+                # Not continual, update for next region check
+                base = region
+        else:
+            base = region
+
+    # remove the collapse region from the list
+    if len(removal_list) != 0:
+        for region in removal_list:
+            sorted_list.remove(region)
+
+    # rebuild a new memories regions
+    memories = dict()
+    for region in sorted_list:
+        memories.update({region["name"] : region})
+
+    return memories
 
 
 def compute_address_range(region):
