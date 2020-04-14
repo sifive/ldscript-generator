@@ -34,6 +34,7 @@ PHDRS
     ram_init PT_LOAD;
     tls PT_TLS;
     ram PT_LOAD;
+    itim_init PT_LOAD;
 }
 
 SECTIONS
@@ -207,7 +208,7 @@ SECTIONS
         *(.gnu.linkonce.t.*)
 {% endif %}
         *(.itim .itim.*)
-    } >{{ itim.vma }} AT>{{ itim.lma }} :rom
+    } >{{ itim.vma }} AT>{{ itim.lma }} :itim_init
 
     PROVIDE( metal_segment_itim_source_start = LOADADDR(.itim) );
     PROVIDE( metal_segment_itim_target_start = ADDR(.itim) );
