@@ -267,7 +267,7 @@ SECTIONS
     PROVIDE( __tbss_size = SIZEOF(.tbss) );
     PROVIDE( __tls_size = __tls_end - __tls_base );
 
-    .tbss_space : {
+    .tbss_space : ALIGN(8) {
 	. = . + __tbss_size;
     } >{{ ram.vma }} :ram
 
