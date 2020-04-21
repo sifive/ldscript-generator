@@ -301,6 +301,7 @@ SECTIONS
 
     .heap (NOLOAD) : ALIGN(4) {
         PROVIDE( __end = . );
+        PROVIDE( __heap_start = . );
         PROVIDE( metal_segment_heap_target_start = . );
         /* If __heap_max is defined, grow the heap to use the rest of RAM,
          * otherwise set the heap size to __heap_size */
