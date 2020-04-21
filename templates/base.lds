@@ -219,6 +219,11 @@ SECTIONS
      * memory into a read-write-capable memory such as data tightly-integrated
      * memory (DTIM) or another main memory, as well as the BSS, stack, and
      * heap.
+     *
+     * You might notice that .data, .tdata, .tbss, .tbss_space, and .bss all
+     * have an apparently unnecessary ALIGN at their top. This is because
+     * the implementation of _start in Freedom Metal libgloss depends on the
+     * ADDR and LOADADDR being 8-byte aligned.
      */
 
     .data : ALIGN(8) {
@@ -247,7 +252,7 @@ SECTIONS
 {% endif %}
     } >{{ ram.vma }} AT>{{ ram.lma }} :ram_init
 
-    .tdata : {
+    .tdata : ALIGN(8) {
         PROVIDE( __tls_base = . );
 	*(.tdata .tdata.* .gnu.linkonce.td.*)
     } >{{ ram.vma }} AT>{{ ram.lma }} :tls :ram_init
