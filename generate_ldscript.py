@@ -10,7 +10,7 @@ import sys
 import jinja2
 import pydevicetree
 
-from memory_map import get_memories, get_load_map
+from memory_map import get_memories, get_ram_memories, get_load_map
 
 TEMPLATES_PATH = "templates"
 
@@ -91,8 +91,21 @@ def get_itim_length(memories):
     return 0
 
 
+def get_sorted_ram_memories(dts):
+    """Get a sorted RAM list"""
+    ram_memories = get_ram_memories(dts)
+    sorted_ram_list = list(ram_memories.values())
+    print("Consolidated RAM memories:", file=sys.stderr)
+    for memory in sorted_ram_list:
+        print("\t%4s: 0x%08x-0x%08x" %
+              (memory["name"], memory["base"], memory["length"]), file=sys.stderr)
+    return sorted_ram_list
+
+
 def main(argv):
     """Parse arguments, extract data, and render the linker script to file"""
+    # pylint: disable=too-many-locals
+
     parsed_args = parse_arguments(argv)
 
     template = get_template(parsed_args)
@@ -102,6 +115,7 @@ def main(argv):
 
     memories = get_memories(dts)
     print_memories(memories)
+    sorted_ram_memories = get_sorted_ram_memories(dts)
 
     ram, rom, itim = get_load_map(memories, scratchpad=parsed_args.scratchpad)
 
@@ -121,6 +135,11 @@ def main(argv):
     else:
         boot_hart = 0
 
+    if dts.chosen("metal,eccscrub"):
+        ecc_scrub = dts.chosen("metal,eccscrub")[0]
+    else:
+        ecc_scrub = 0
+
     # Pass sorted memories to the template generator so that the generated linker
     # script is reproducible.
     sorted_memories = list(memories.values())
@@ -128,11 +147,13 @@ def main(argv):
 
     values = {
         "memories": sorted_memories,
+        "ram_memories": sorted_ram_memories,
         "default_stack_size": "0x400",
         "default_heap_size": "0x800",
         "num_harts": len(harts),
         "boot_hart": boot_hart,
         "chicken_bit": 1,
+        "eccscrub_bit": ecc_scrub,
         "text_in_itim": text_in_itim,
         "rom": rom,
         "itim": itim,
