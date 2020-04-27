@@ -75,3 +75,23 @@ global def runLdScriptGenerator options =
 # This allows the python virtualenv to be created prior to running a build
 # with `wake preinstall Unit`.
 publish preinstall = (pythonRequirementsInstaller generatorDir), Nil
+
+#########################################################################
+# installLdScriptGenerator allows wake flows to install the linker script
+# generator in customer deliveries and exclude all content which does
+# not directly contribute to the generation of customer BSP content.
+# It takes the following parameter
+#   - installPath: the path to install the generator in
+# For example, if you call `installLdScriptGenerator "scripts"`
+# the generator script will be found in
+#   scripts/ldscript-generator/generate_ldscript.py
+#########################################################################
+global target installLdScriptGenerator installPath =
+  def generatorSources =
+    source "{here}/README.md",
+    source "{here}/LICENSE",
+    sources here `.*\.py` ++
+    sources "{here}/templates" `.*\.lds`
+
+  mkdir installPath,
+  map (installIn installPath) generatorSources
