@@ -95,6 +95,7 @@ def get_sorted_ram_memories(dts):
     """Get a sorted RAM list"""
     ram_memories = get_ram_memories(dts)
     sorted_ram_list = list(ram_memories.values())
+    sorted_ram_list.sort(key=lambda m: m["name"])
     print("Consolidated RAM memories:", file=sys.stderr)
     for memory in sorted_ram_list:
         print("\t%4s: 0x%08x-0x%08x" %
