@@ -136,7 +136,11 @@ def main(argv):
     else:
         boot_hart = 0
 
-    if dts.chosen("metal,eccscrub"):
+    if len(sorted_ram_memories) == 0:
+        # If there are no rams to scrub, don't bother scrubbing them
+        ecc_scrub = 0
+    elif dts.chosen("metal,eccscrub"):
+        # Otherwise default to scrubbing if metal,eccscrub = <1>;
         ecc_scrub = dts.chosen("metal,eccscrub")[0]
     else:
         ecc_scrub = 0

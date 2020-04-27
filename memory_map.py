@@ -58,8 +58,7 @@ def get_ram_memories(tree):
             memories.update({name : region})
 
     if len(memories) == 0:
-        print("ERROR: No RAM is not defined by the Devicetree")
-        sys.exit(1)
+        return memories
 
     compute_address_ranges(memories)
     memories = consolidate_address_ranges(memories)
