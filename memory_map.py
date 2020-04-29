@@ -191,8 +191,12 @@ def consolidate_address_ranges(regions):
     for region in sorted_list:
         memories.update({region["name"] : region})
 
-    return memories
+    for _, memory in memories.items():
+        if 'memory' in memory["name"] and memory["length"] > 0x10000:
+            # Only 64KB of memory is zeroed due to limitation in RTL sim run
+            memory["length"] = 0x10000
 
+    return memories
 
 def compute_address_range(region):
     """Extract the address range from the reg of the Node"""
