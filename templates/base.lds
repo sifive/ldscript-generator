@@ -90,7 +90,7 @@ SECTIONS
 {% for memory in ram_memories %}
     {% if 'memory' in memory["name"]: %}
     /* Default memory to zero-scrub for at most 64KB, for limiting RTL simulation run time. */
-     * User is recommended to enable the full size for manual RTL simulation run! */
+    /* User is recommended to enable the full size for manual RTL simulation run! */
     {% endif %}
     PROVIDE( metal_{{ memory.name }}_memory_start = {{ memory.base_hex }} );
     PROVIDE( metal_{{ memory.name }}_memory_end = {{ memory.base_hex }} + {{ memory.length_hex }} );
