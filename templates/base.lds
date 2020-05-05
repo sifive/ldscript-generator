@@ -35,6 +35,7 @@ PHDRS
     tls PT_TLS;
     ram PT_LOAD;
     itim_init PT_LOAD;
+    text PT_LOAD;
 }
 
 SECTIONS
@@ -170,18 +171,6 @@ SECTIONS
         {% endif %}
     } >{{ rom.vma }} : rom
 
-{% if not text_in_itim %}
-    .text : {
-        *(.text.unlikely .text.unlikely.*)
-        *(.text.startup .text.startup.*)
-        *(.text .text.*)
-        *(.gnu.linkonce.t.*)
-        {% if ramrodata and privilege_en %}
-        __unprivileged_section_end__ = .;
-        {% endif %}
-    } >{{ rom.vma }} :rom
-{% endif %}
-
 {% if not ramrodata %}
     .rodata : {
         *(.rdata)
@@ -211,22 +200,30 @@ SECTIONS
      */
 
     .itim : ALIGN(8) {
-{% if text_in_itim %}
-        /* The .text sections are placed in the ITIM to improve the performance
-         * of all post-init and non-constructor application code. Note that
-         * this may cause the program to fail to link if the ITIM is not large
-         * enough to contain the entire .text section. */
-        *(.text.unlikely .text.unlikely.*)
-        *(.text.startup .text.startup.*)
-        *(.text .text.*)
-        *(.gnu.linkonce.t.*)
-{% endif %}
         *(.itim .itim.*)
+{% block force_itim %}
+{% endblock %}
     } >{{ itim.vma }} AT>{{ itim.lma }} :itim_init
 
     PROVIDE( metal_segment_itim_source_start = LOADADDR(.itim) );
     PROVIDE( metal_segment_itim_target_start = ADDR(.itim) );
     PROVIDE( metal_segment_itim_target_end = ADDR(.itim) + SIZEOF(.itim) );
+
+    /* TEXT SECTION
+     *
+     * The following section contains the code of the program, excluding
+     * everything that's been allocated into the ITIM already
+     */
+
+    .text : {
+        *(.text.unlikely .text.unlikely.*)
+        *(.text.startup .text.startup.*)
+        *(.text .text.*)
+        *(.gnu.linkonce.t.*)
+        {% if ramrodata and privilege_en %}
+        __unprivileged_section_end__ = .;
+        {% endif %}
+    } >{{ rom.vma }} :text
 
     /* RAM SECTION
      *
