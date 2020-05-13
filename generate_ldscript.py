@@ -44,6 +44,8 @@ def parse_arguments(argv):
                        help="Emits a linker script with the scratchpad layout")
     group.add_argument("--ramrodata", action="store_true",
                        help="Emits a linker script with the ramrodata layout")
+    group.add_argument("--perf_tools", action="store_true",
+                       help="Emits a linker script with the SiFive perf-tools SDK layout")
     group.add_argument("--freertos", action="store_true",
                        help="Emits a linker script with specific layout for freertos")
 
@@ -62,6 +64,8 @@ def get_template(parsed_args):
 
     if parsed_args.ramrodata:
         layout = "ramrodata"
+    elif parsed_args.perf_tools:
+        layout = "perf-tools"
     elif parsed_args.scratchpad:
         layout = "scratchpad"
     elif parsed_args.freertos:
@@ -121,7 +125,9 @@ def main(argv):
     ram, rom, itim, lim = get_load_map(memories, scratchpad=parsed_args.scratchpad)
 
     text_in_itim = False
-    if parsed_args.ramrodata and get_itim_length(memories) >= MAGIC_RAMRODATA_TEXT_THRESHOLD:
+    itim_requested = parsed_args.ramrodata or parsed_args.perf_tools
+    fit_in_itim = get_itim_length(memories) >= MAGIC_RAMRODATA_TEXT_THRESHOLD
+    if itim_requested and fit_in_itim:
         text_in_itim = True
         print(".text section included in ITIM", file=sys.stderr)
     elif parsed_args.ramrodata:
