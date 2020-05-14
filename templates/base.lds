@@ -117,13 +117,13 @@ SECTIONS
         KEEP (*(SORT_NONE(.fini)))
     } >{{ rom.vma }} :rom
 
-    .preinit_array : ALIGN(8) {
+    .preinit_array : ALIGN(16) {
         PROVIDE_HIDDEN (__preinit_array_start = .);
         KEEP (*(.preinit_array))
         PROVIDE_HIDDEN (__preinit_array_end = .);
     } >{{ rom.vma }} :rom
 
-    .init_array : ALIGN(8) {
+    .init_array : ALIGN(16) {
         PROVIDE_HIDDEN (__init_array_start = .);
         KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
         KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
@@ -134,7 +134,7 @@ SECTIONS
         PROVIDE_HIDDEN ( metal_constructors_end = .);
     } >{{ rom.vma }} :rom
 
-    .fini_array : ALIGN(8) {
+    .fini_array : ALIGN(16) {
         PROVIDE_HIDDEN (__fini_array_start = .);
         KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
         KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
@@ -176,7 +176,7 @@ SECTIONS
         *(.rdata)
         *(.rodata .rodata.*)
         *(.gnu.linkonce.r.*)
-        . = ALIGN(8);
+        . = ALIGN(16);
         *(.srodata.cst16)
         *(.srodata.cst8)
         *(.srodata.cst4)
@@ -199,7 +199,7 @@ SECTIONS
      * functions which benefit from low instruction-fetch latency.
      */
 
-    .itim : ALIGN(8) {
+    .itim : ALIGN(16) {
         *(.itim .itim.*)
 {% block force_itim %}
 {% endblock %}
@@ -238,33 +238,33 @@ SECTIONS
      * ADDR and LOADADDR being 8-byte aligned.
      */
 
-    .data : ALIGN(8) {
+    .data : ALIGN(16) {
         {% if privilege_en %}
         __unprivileged_data_section_start__ = .;
         {% endif %}
         *(.data .data.*)
         *(.gnu.linkonce.d.*)
-        . = ALIGN(8);
+        . = ALIGN(16);
         PROVIDE( __global_pointer$ = . + 0x800 );
         *(.sdata .sdata.* .sdata2.*)
         *(.gnu.linkonce.s.*)
 {% if ramrodata %}
         /* Read-only data is placed in RAM to improve performance, since
          * read-only memory generally has higher latency than RAM */
-        . = ALIGN(8);
+        . = ALIGN(16);
         *(.srodata.cst16)
         *(.srodata.cst8)
         *(.srodata.cst4)
         *(.srodata.cst2)
         *(.srodata .srodata.*)
-        . = ALIGN(8);
+        . = ALIGN(16);
         *(.rdata)
         *(.rodata .rodata.*)
         *(.gnu.linkonce.r.*)
 {% endif %}
     } >{{ ram.vma }} AT>{{ ram.lma }} :ram_init
 
-    .tdata : ALIGN(8) {
+    .tdata : ALIGN(16) {
         PROVIDE( __tls_base = . );
 	*(.tdata .tdata.* .gnu.linkonce.td.*)
     } >{{ ram.vma }} AT>{{ ram.lma }} :tls :ram_init
@@ -276,7 +276,7 @@ SECTIONS
     PROVIDE( metal_segment_data_target_start = ADDR(.data) );
     PROVIDE( metal_segment_data_target_end = ADDR(.tdata) + SIZEOF(.tdata) );
 
-    .tbss : ALIGN(8) {
+    .tbss : ALIGN(16) {
 	*(.tbss .tbss.* .gnu.linkonce.tb.*)
 	*(.tcommon .tcommon.*)
 	PROVIDE( __tls_end = . );
@@ -284,11 +284,11 @@ SECTIONS
     PROVIDE( __tbss_size = SIZEOF(.tbss) );
     PROVIDE( __tls_size = __tls_end - __tls_base );
 
-    .tbss_space : ALIGN(8) {
+    .tbss_space : ALIGN(16) {
 	. = . + __tbss_size;
     } >{{ ram.vma }} :ram
 
-    .bss (NOLOAD): ALIGN(8) {
+    .bss (NOLOAD): ALIGN(16) {
         *(.sbss*)
         *(.gnu.linkonce.sb.*)
         *(.bss .bss.*)
@@ -315,7 +315,7 @@ SECTIONS
         PROVIDE(metal_segment_stack_end = .);
     } >{{ ram.vma }} :ram
 
-    .heap (NOLOAD) : ALIGN(8) {
+    .heap (NOLOAD) : ALIGN(16) {
         PROVIDE( __end = . );
         PROVIDE( __heap_start = . );
         PROVIDE( metal_segment_heap_target_start = . );
