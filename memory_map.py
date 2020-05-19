@@ -192,8 +192,8 @@ def consolidate_address_ranges(regions):
         memories.update({region["name"] : region})
 
     for _, memory in memories.items():
-        if 'memory' in memory["name"] and memory["length"] > 0x10000:
-            # Only 64KB of memory is zeroed due to limitation in RTL sim run
+        if memory["length"] > 0x10000:
+            # At most 64KB of each memory is zeroed, limit for RTL sim run
             memory["length"] = 0x10000
 
     return memories
