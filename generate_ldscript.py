@@ -136,8 +136,8 @@ def main(argv):
     else:
         boot_hart = 0
 
-    if len(sorted_ram_memories) == 0:
-        # If there are no rams to scrub, don't bother scrubbing them
+    if (len(sorted_ram_memories) == 0) or (ram == rom):
+        # If there is no ram or just boot memory, don't bother scrubbing them
         ecc_scrub = 0
     elif dts.chosen("metal,eccscrub"):
         # Otherwise default to scrubbing if metal,eccscrub = <1>;
