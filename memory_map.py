@@ -25,6 +25,7 @@ def get_ram_memories(tree):
     for node in list(tree.all_nodes()):
         if any([re.compile("itim").search(node.name), \
                 re.compile("dtim").search(node.name), \
+                re.compile("lim").search(node.name), \
                 re.compile("sys-sram").search(node.name), \
                 re.compile("ils").search(node.name),  \
                 re.compile("dls").search(node.name), \
@@ -39,6 +40,8 @@ def get_ram_memories(tree):
                 elif re.compile("dtim").search(node.name):
                     name += str(dtim_count)
                     dtim_count += 1
+                elif re.compile("lim").search(node.name):
+                    name += "0"
                 elif re.compile("sys-sram").search(node.name):
                     name += str(sram_count)
                     sram_count += 1
@@ -85,19 +88,25 @@ def get_load_map(memories, scratchpad):
     ram = dict()
     rom = dict()
     itim = dict()
+    lim = dict()
 
     if "testram" in memories:
         rom["vma"] = "testram"
         ram["lma"] = "testram"
         ram["vma"] = "testram"
         itim["lma"] = "testram"
+        itim["vma"] = "testram"
+        lim["lma"] = "testram"
 
+        if "itim" in memories:
+            itim["vma"] = "itim"
         if "itim" in memories["testram"]["contents"]:
             itim["vma"] = "testram"
-        elif "itim" in memories:
-            itim["vma"] = "itim"
+
+        if "lim" in memories:
+            lim["vma"] = "lim"
         else:
-            itim["vma"] = "testram"
+            lim["vma"] = "testram"
     else:
         if scratchpad:
             hex_load = "ram"
@@ -108,17 +117,20 @@ def get_load_map(memories, scratchpad):
         ram["lma"] = hex_load
         ram["vma"] = "ram"
         itim["lma"] = hex_load
+        itim["vma"] = hex_load
+        lim["lma"] = hex_load
 
-        if "itim" in memories["rom"]["contents"]:
-            itim["vma"] = hex_load
-        elif "itim" in memories["ram"]["contents"]:
-            itim["vma"] = "ram"
-        elif "itim" in memories:
+        if "itim" in memories:
             itim["vma"] = "itim"
-        else:
-            itim["vma"] = hex_load
+        if "itim" in memories["ram"]["contents"]:
+            itim["vma"] = "ram"
 
-    return ram, rom, itim
+        if "lim" in memories:
+            lim["vma"] = "lim"
+        else:
+            lim["vma"] = "ram"
+
+    return ram, rom, itim, lim
 
 
 def get_chosen_region(dts, chosen_property_name):
@@ -137,6 +149,18 @@ def get_chosen_region(dts, chosen_property_name):
         }
     return None
 
+def get_lim_region(dts):
+    """Extract LIM region"""
+    lim = dts.match("sifive,lim")
+
+    if lim:
+        return {
+            "node": lim[0],
+            "region": 0,
+            "offset": 0,
+        }
+    return None
+
 
 def get_chosen_regions(tree):
     """Given the tree, get the regions requested by chosen properties.
@@ -146,6 +170,7 @@ def get_chosen_regions(tree):
         "entry": get_chosen_region(tree, "metal,entry"),
         "ram": get_chosen_region(tree, "metal,ram"),
         "itim": get_chosen_region(tree, "metal,itim"),
+        "lim": get_lim_region(tree),
     }
     if regions["entry"] is None:
         print("ERROR: metal,entry is not defined by the Devicetree")
@@ -297,6 +322,15 @@ def invert_regions_to_memories(regions):
                 "path": regions["itim"]["node"].get_path()
             }
 
+    if regions["lim"] is not None:
+        memories["lim"] = {
+            "name": "lim",
+            "base": regions["lim"]["base"],
+            "length": regions["lim"]["length"],
+            "contents": ["lim"],
+            "path": regions["lim"]["node"].get_path()
+        }
+
     return memories
 
 
@@ -308,6 +342,8 @@ def attributes_from_contents(contents):
     if "ram" in contents:
         attributes += "rwa"
     if "itim" in contents:
+        attributes += "rwxai"
+    if "lim" in contents:
         attributes += "rwxai"
 
     # Remove duplicates
