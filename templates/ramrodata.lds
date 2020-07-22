@@ -15,6 +15,7 @@
  # Set layout options
  #}
 {% set ramrodata = True %}
+{% set eccscrub_en = True %}
 
 {% block force_itim %}
 {% if text_in_itim %}
