@@ -83,6 +83,7 @@ SECTIONS
      * certain core features */
     PROVIDE(__metal_chicken_bit = {{ chicken_bit|default(0) }});
 
+{% if eccscrub_en %}
     /* The memory_ecc_scrub bit is used by _entry code to enable/disable
      * memories scrubbing to zero  */
     PROVIDE(__metal_eccscrub_bit = {{ eccscrub_bit|default(0) }});
@@ -96,6 +97,7 @@ SECTIONS
     PROVIDE( metal_{{ memory.name }}_memory_start = {{ memory.base_hex }} );
     PROVIDE( metal_{{ memory.name }}_memory_end = {{ memory.base_hex }} + {{ memory.length_hex }} );
 {% endfor %}
+{% endif %}
 
     /* ROM SECTION
      *
