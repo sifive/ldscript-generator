@@ -90,8 +90,8 @@ SECTIONS
 
     /* The RAM memories map for ECC scrubbing */
 {% for memory in ram_memories %}
-    {% if 'memory' in memory["name"]: %}
-    /* Default memory to zero-scrub for at most 64KB, for limiting RTL simulation run time. */
+    {% if '0x10000' in memory["length_hex"]: %}
+    /* Default zero-scrub to at most 64KB, for limiting RTL simulation run time. */
     /* User is recommended to enable the full size for manual RTL simulation run! */
     {% endif %}
     PROVIDE( metal_{{ memory.name }}_memory_start = {{ memory.base_hex }} );
