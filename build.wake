@@ -48,11 +48,12 @@ global def runLdScriptGenerator options =
   def inputs =
     # During execution, the generator needs access to both
     # Python sources and the linker script template files
+    def outputDir = mkdir (simplify "{output}/..")
     def generatorSources = sources here `.*\.(py|lds)`
     def dtsSources = topDTSFile, otherDTSFiles
-    generatorSources ++ dtsSources
+    outputDir, generatorSources ++ dtsSources
 
-  def outputs = options.getLdScriptGeneratorOptionsOutputFile, Nil
+  def output = options.getLdScriptGeneratorOptionsOutputFile
 
   def args =
     def base =
@@ -69,7 +70,7 @@ global def runLdScriptGenerator options =
   makePlan (pythonCommand "{generatorDir}/generate_ldscript.py" args) inputs
   | addPlanRelativePath "PYTHONPATH" generatorDir
   | addPythonRequirementsEnv generatorDir
-  | setPlanFnOutputs (\_ outputs)
+  | setPlanFnOutputs (\_ output, Nil)
   | runJob
 
 # This allows the python virtualenv to be created prior to running a build
