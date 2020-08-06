@@ -13,10 +13,10 @@ FREERTOS_OUTPUT="${OUTPUT_PATH}/metal.freertos.lds"
 
 wake --init .
 
-wake -v "runLdScriptGenerator (makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) LDSCRIPT_DEFAULT \"${DEFAULT_OUTPUT}\")"
-wake -v "runLdScriptGenerator (makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) LDSCRIPT_RAMRODATA \"${RAMRODATA_OUTPUT}\")"
-wake -v "runLdScriptGenerator (makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) LDSCRIPT_SCRATCHPAD \"${SCRATCHPAD_OUTPUT}\")"
-wake -v "runLdScriptGenerator (makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) LDSCRIPT_FREERTOS \"${FREERTOS_OUTPUT}\")"
+wake -v -x "runLdScriptGenerator (makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) LDSCRIPT_DEFAULT \"${DEFAULT_OUTPUT}\")"
+wake -v -x "runLdScriptGenerator (makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) LDSCRIPT_RAMRODATA \"${RAMRODATA_OUTPUT}\")"
+wake -v -x "runLdScriptGenerator (makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) LDSCRIPT_SCRATCHPAD \"${SCRATCHPAD_OUTPUT}\")"
+wake -v -x "runLdScriptGenerator (makeLdScriptGeneratorOptions (source \"${SPIKE_DTS_DIR}/design.dts\") (sources \"${SPIKE_DTS_DIR}\" \`core.dts\`) LDSCRIPT_FREERTOS \"${FREERTOS_OUTPUT}\")"
 
 OUTPUTS=($DEFAULT_OUTPUT $RAMRODATA_OUTPUT $SCRATCHPAD_OUTPUT )
 for file in ${OUTPUTS[@]}; do
