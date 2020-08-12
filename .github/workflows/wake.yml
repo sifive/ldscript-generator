@@ -1,4 +1,4 @@
-name: wake-api-test
+name: wake-test
 
 on:
   push:
@@ -7,25 +7,28 @@ on:
       - 'LICENSE'
 
 jobs:
-  test:
+  api:
     runs-on: ubuntu-latest
 
     steps:
       - name: 'Init Wit Workspace'
         uses: sifive/wit/actions/init@v0.13.2
         with:
-          additional_package: git@github.com:sifive/environment-blockci-sifive.git::0.7.0
+          additional_packages: git@github.com:sifive/environment-blockci-sifive.git::0.7.0
 
       - name: 'Run Wake API Test'
         uses: sifive/environment-blockci-sifive/actions/wake@0.7.0
         with:
           command: -C ldscript-generator/tests -v testAPI
 
+  install:
+    runs-on: ubuntu-latest
+
     steps:
       - name: 'Init Wit Workspace'
         uses: sifive/wit/actions/init@v0.13.2
         with:
-          additional_package: git@github.com:sifive/environment-blockci-sifive.git::0.7.0
+          additional_packages: git@github.com:sifive/environment-blockci-sifive.git::0.7.0
 
       - name: 'Run generator install test'
         uses: sifive/environment-blockci-sifive/actions/wake@0.7.0
