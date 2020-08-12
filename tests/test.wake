@@ -1,0 +1,33 @@
+package test_ldscript_sifive
+from v0_19_wake import _
+
+def testAPI _ =
+  def outDir   = "build/ldscript-generator"
+  def dtsTop   = source "{here}/spike/design.dts"
+  def dtsExtra = sources here `spike/core\.dts`
+
+  def gen kind output =
+    makeLdScriptGeneratorOptions dtsTop dtsExtra kind output
+    | runLdScriptGenerator
+    | getJobOutput
+
+  def outputs =
+    gen LDSCRIPT_DEFAULT    "{outDir}/metal.default.lds",
+    gen LDSCRIPT_RAMRODATA  "{outDir}/metal.ramrodata.lds",
+    gen LDSCRIPT_SCRATCHPAD "{outDir}/metal.scratchpad.lds",
+    gen LDSCRIPT_FREERTOS   "{outDir}/metal.freertos.lds",
+    Nil
+
+  def check path =
+    def cmd = "grep", "-c", "OUTPUT_ARCH", path.getPathName, Nil
+    require Pass stdout =
+      makePlan cmd (path, Nil)
+      | setPlanStdout logDebug
+      | runJob
+      | getJobStdout
+
+    if stdout ==* "1\n"
+    then Pass path.getPathName
+    else Fail "missing OUTPUT_ARCH".makeError
+
+  map check outputs | findFail
