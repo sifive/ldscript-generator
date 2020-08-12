@@ -97,6 +97,8 @@ SECTIONS
     PROVIDE( metal_{{ memory.name }}_memory_start = {{ memory.base_hex }} );
     PROVIDE( metal_{{ memory.name }}_memory_end = {{ memory.base_hex }} + {{ memory.length_hex }} );
 {% endfor %}
+{% else %}
+    PROVIDE(__metal_eccscrub_bit = 0);
 {% endif %}
 
     /* ROM SECTION
