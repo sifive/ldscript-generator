@@ -54,6 +54,11 @@ SECTIONS
     __stack_size = DEFINED(__stack_size) ? __stack_size : {{ default_stack_size|default("0x400") }};
     PROVIDE(__stack_size = __stack_size);
 
+{% if freertos_en %}
+    __freertos_context_size = DEFINED(__freertos_context_size) ? __freertos_context_size : 0x100;
+    PROVIDE(__freertos_context_size = __freertos_context_size);
+{% endif %}
+
     /* The size of the heap can be overriden at build-time by adding the
      * following to CFLAGS:
      *
@@ -328,6 +333,12 @@ SECTIONS
          * otherwise set the heap size to __heap_size */
         . = DEFINED(__heap_max) ? MIN( LENGTH(ram) - ( . - ORIGIN(ram)) , 0x10000000) : __heap_size;
         PROVIDE( metal_segment_heap_target_end = . );
+{% if freertos_en %}
+        . += __stack_size; /* For ISR */
+        PROVIDE( __freertos_irq_stack_top = . );
+        . += __freertos_context_size;
+        PROVIDE( __freertos_irq_stack_top = . );
+{% endif %}
         PROVIDE( _heap_end = . );
         PROVIDE( __heap_end = . );
     } >{{ ram.vma }} :ram

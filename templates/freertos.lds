@@ -4,7 +4,7 @@
 /* Privileged mode Linker Script
  *
  * This linker script is based on metal.default.lds. It introduce specific
- * section to isolate (acessible only from machine mode) and others that can be
+ * section to isolate (accessible only from machine mode) and others that can be
  * used in every execution mode. This linker script it tailored for FreeRTOS
  * applications.
  */
@@ -16,6 +16,7 @@
 {% set ramrodata = False %}
 {% set privilege_en = True %}
 {% set eccscrub_en = True %}
+{% set freertos_en = True %}
 
 {% block privileged_function_section %}
 	.privileged_functions : ALIGN (32) {
