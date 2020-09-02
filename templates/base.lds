@@ -153,6 +153,7 @@ SECTIONS
 
     .ctors : {
         {% if privilege_en %}
+        . = ALIGN(32);
         __unprivileged_section_start__ = .;
         {% endif %}
         KEEP (*crtbegin.o(.ctors))
@@ -186,10 +187,6 @@ SECTIONS
         *(.srodata.cst4)
         *(.srodata.cst2)
         *(.srodata .srodata.*)
-        {% if privilege_en %}
-        __unprivileged_section_end__ = .;
-        {% endif %}
-
     } >{{ rom.vma }} :rom
 {% endif %}
 
@@ -224,7 +221,9 @@ SECTIONS
         *(.text.startup .text.startup.*)
         *(.text .text.*)
         *(.gnu.linkonce.t.*)
-        {% if ramrodata and privilege_en %}
+        {% if privilege_en %}
+        *(freertos_system_calls)
+        . = ALIGN(32);
         __unprivileged_section_end__ = .;
         {% endif %}
     } >{{ rom.vma }} :text
@@ -244,6 +243,7 @@ SECTIONS
 
     .data : ALIGN(8) {
         {% if privilege_en %}
+        . = ALIGN(32);
         __unprivileged_data_section_start__ = .;
         {% endif %}
         *(.data .data.*)
@@ -299,6 +299,7 @@ SECTIONS
         *(.gnu.linkonce.b.*)
         *(COMMON)
 {% if privilege_en %}
+        . = ALIGN(32);
         __unprivileged_data_section_end__ = .;
 {% endif %}
     } >{{ ram.vma }} :ram

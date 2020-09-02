@@ -18,21 +18,21 @@
 {% set eccscrub_en = True %}
 
 {% block privileged_function_section %}
-	.privileged_functions : ALIGN (4) {
+	.privileged_functions : ALIGN (32) {
         __privileged_functions_start__ = .;
         KEEP(*(privileged_functions))
-        . = ALIGN(4);
+        . = ALIGN(32);
 		__privileged_functions_end__ = .;
 	} >{{ rom.vma }}
 {% endblock %} 
 
 {% block privileged_data_section %}
-    .privileged_data (NOLOAD) : ALIGN(8) {
+    .privileged_data (NOLOAD) : ALIGN(32) {
         __privileged_data_start__ = .;
 		*(privileged_data)
 		/* Non kernel data is kept out of the first _Privileged_Data_Region_Size
 		bytes of SRAM. */
-        . = ALIGN(4);
+        . = ALIGN(32);
 		__privileged_data_end__ = .;
 	} >{{ ram.vma }}
 {% endblock %} 
