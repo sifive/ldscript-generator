@@ -25,6 +25,7 @@ def get_ram_memories(tree):
     for node in list(tree.all_nodes()):
         if any([re.compile("itim").search(node.name), \
                 re.compile("dtim").search(node.name), \
+                re.compile("cache-controller").search(node.name), \
                 re.compile("sys-sram").search(node.name), \
                 re.compile("ils").search(node.name),  \
                 re.compile("dls").search(node.name), \
@@ -51,6 +52,9 @@ def get_ram_memories(tree):
                 else:
                     name += str(memory_count)
                     memory_count += 1
+
+            if name == "cache_controller" and len(node.get_reg()) == 2:
+                name = "lim_0" # For now, only single LIM region per core design.
 
             region = dict()
             region.update(name=name, node=node, path=node.get_path(), \
@@ -85,19 +89,25 @@ def get_load_map(memories, scratchpad):
     ram = dict()
     rom = dict()
     itim = dict()
+    lim = dict()
 
     if "testram" in memories:
         rom["vma"] = "testram"
         ram["lma"] = "testram"
         ram["vma"] = "testram"
         itim["lma"] = "testram"
+        itim["vma"] = "testram"
+        lim["lma"] = "testram"
 
+        if "itim" in memories:
+            itim["vma"] = "itim"
         if "itim" in memories["testram"]["contents"]:
             itim["vma"] = "testram"
-        elif "itim" in memories:
-            itim["vma"] = "itim"
+
+        if "lim" in memories:
+            lim["vma"] = "lim"
         else:
-            itim["vma"] = "testram"
+            lim["vma"] = "testram"
     else:
         if scratchpad:
             hex_load = "ram"
@@ -108,18 +118,20 @@ def get_load_map(memories, scratchpad):
         ram["lma"] = hex_load
         ram["vma"] = "ram"
         itim["lma"] = hex_load
+        itim["vma"] = hex_load
+        lim["lma"] = hex_load
 
-        if "itim" in memories["rom"]["contents"]:
-            itim["vma"] = hex_load
-        elif "itim" in memories["ram"]["contents"]:
-            itim["vma"] = "ram"
-        elif "itim" in memories:
+        if "itim" in memories:
             itim["vma"] = "itim"
+        if "itim" in memories["ram"]["contents"]:
+            itim["vma"] = "ram"
+
+        if "lim" in memories:
+            lim["vma"] = "lim"
         else:
-            itim["vma"] = hex_load
+            lim["vma"] = "ram"
 
-    return ram, rom, itim
-
+    return ram, rom, itim, lim
 
 def get_chosen_region(dts, chosen_property_name):
     """Extract the requested address region from the chosen property"""
@@ -137,6 +149,17 @@ def get_chosen_region(dts, chosen_property_name):
         }
     return None
 
+def get_lim_region(dts):
+    """Extract LIM region"""
+    lim = dts.match("sifive,ccache0")
+
+    if lim and len(lim[0].get_reg()) == 2:
+        return {
+            "node": lim[0],
+            "region": 0,
+            "offset": 0,
+        }
+    return None
 
 def get_chosen_regions(tree):
     """Given the tree, get the regions requested by chosen properties.
@@ -146,7 +169,9 @@ def get_chosen_regions(tree):
         "entry": get_chosen_region(tree, "metal,entry"),
         "ram": get_chosen_region(tree, "metal,ram"),
         "itim": get_chosen_region(tree, "metal,itim"),
+        "lim": get_lim_region(tree),
     }
+
     if regions["entry"] is None:
         print("ERROR: metal,entry is not defined by the Devicetree")
         sys.exit(1)
@@ -200,13 +225,20 @@ def consolidate_address_ranges(regions):
 
 def compute_address_range(region):
     """Extract the address range from the reg of the Node"""
-    reg = region["node"].get_reg()
-    base = reg[region["region"]][0] + region["offset"]
-    length = reg[region["region"]][1] - region["offset"]
 
-    region["base"] = base
-    region["length"] = length
-
+    sideband = region["node"].get_reg().get_by_name("sideband")
+    if sideband:
+        block_size = region["node"].get_field("cache-block-size")
+        sets = region["node"].get_field("cache-sets")
+        # Way0 is always enabled. Substract corresponding memory area.
+        region["length"] = region["node"].get_field("cache-size") - (sets * block_size)
+        region["base"] = sideband[0]
+    else:
+        reg = region["node"].get_reg()
+        base = reg[region["region"]][0] + region["offset"]
+        length = reg[region["region"]][1] - region["offset"]
+        region["base"] = base
+        region["length"] = length
 
 def compute_address_ranges(regions):
     """Given the requested regions, compute the effective address ranges
@@ -297,6 +329,15 @@ def invert_regions_to_memories(regions):
                 "path": regions["itim"]["node"].get_path()
             }
 
+    if regions["lim"] is not None:
+        memories["lim"] = {
+            "name": "lim",
+            "base": regions["lim"]["base"],
+            "length": regions["lim"]["length"],
+            "contents": ["lim"],
+            "path": regions["lim"]["node"].get_path()
+        }
+
     return memories
 
 
@@ -308,6 +349,8 @@ def attributes_from_contents(contents):
     if "ram" in contents:
         attributes += "rwa"
     if "itim" in contents:
+        attributes += "rwxai"
+    if "lim" in contents:
         attributes += "rwxai"
 
     # Remove duplicates
