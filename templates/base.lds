@@ -87,23 +87,9 @@ SECTIONS
      * certain core features */
     PROVIDE(__metal_chicken_bit = {{ chicken_bit|default(0) }});
 
-{% if eccscrub_en %}
     /* The memory_ecc_scrub bit is used by _entry code to enable/disable
      * memories scrubbing to zero  */
     PROVIDE(__metal_eccscrub_bit = {{ eccscrub_bit|default(0) }});
-
-    /* The RAM memories map for ECC scrubbing */
-{% for memory in ram_memories %}
-    {% if '0x10000' in memory["length_hex"]: %}
-    /* Default zero-scrub to at most 64KB, for limiting RTL simulation run time. */
-    /* User is recommended to enable the full size for manual RTL simulation run! */
-    {% endif %}
-    PROVIDE( metal_{{ memory.name }}_memory_start = {{ memory.base_hex }} );
-    PROVIDE( metal_{{ memory.name }}_memory_end = {{ memory.base_hex }} + {{ memory.length_hex }} );
-{% endfor %}
-{% else %}
-    PROVIDE(__metal_eccscrub_bit = 0);
-{% endif %}
 
     /* ROM SECTION
      *
