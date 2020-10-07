@@ -93,6 +93,9 @@ global target installLdScriptGenerator installPath =
     source "{here}/LICENSE",
     sources here `.*\.py` ++
     sources "{here}/templates" `.*\.lds`
-
+  def installWithStructure dir file =
+    def oneDown = simplify "{here}/.."
+    def into = "{dir}/{relative oneDown file.getPathName}"
+    installAs into file
   mkdir installPath,
-  map (installIn installPath) generatorSources
+  map (installWithStructure installPath) generatorSources
