@@ -115,6 +115,7 @@ SECTIONS
     .init : {
         /* The _enter symbol is placed in the .text.metal.init.enter section
          * and must be placed at the beginning of the program */
+        KEEP (*(.text.metal.init.enter.xprop))
         KEEP (*(.text.metal.init.enter))
         KEEP (*(.text.metal.init.*))
         KEEP (*(SORT_NONE(.init)))
