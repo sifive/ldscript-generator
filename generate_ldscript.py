@@ -6,13 +6,14 @@
 
 import argparse
 import sys
+import os
 
 import jinja2
 import pydevicetree
 
 from memory_map import get_memories, get_ram_memories, get_load_map
 
-TEMPLATES_PATH = "templates"
+TEMPLATES_PATH = os.path.dirname(os.path.realpath(__file__)) + "/templates"
 
 # Sets the threshold size of the ITIM at or above which the "ramrodata" layout
 # places the text section into the ITIM
@@ -53,7 +54,7 @@ def parse_arguments(argv):
 def get_template(parsed_args):
     """Initialize jinja2 and return the right template"""
     env = jinja2.Environment(
-        loader=jinja2.PackageLoader(__name__, TEMPLATES_PATH),
+        loader=jinja2.FileSystemLoader(TEMPLATES_PATH),
         trim_blocks=True, lstrip_blocks=True,
     )
     # Make the missingvalue() function available in the template so that the
