@@ -56,7 +56,6 @@ SECTIONS
      * the _sp symbol.
      */
     __stack_size = DEFINED(__stack_size) ? __stack_size : {{ default_stack_size|default("0x400") }};
-    PROVIDE(__stack_size = __stack_size);
 
     /* The size of the heap can be overriden at build-time by adding the
      * following to CFLAGS:
