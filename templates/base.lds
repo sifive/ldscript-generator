@@ -274,7 +274,11 @@ SECTIONS
         *(.data .data.*)
         *(.gnu.linkonce.d.*)
         . = ALIGN(8);
+{% if code_model == "compact" %}
+        PROVIDE( __global_pointer$ = ALIGN ((. + 0x800 ), 16));
+{% else %}
         PROVIDE( __global_pointer$ = . + 0x800 );
+{% endif %}
         *(.sdata .sdata.* .sdata2.*)
         *(.gnu.linkonce.s.*)
 {% if ramrodata %}

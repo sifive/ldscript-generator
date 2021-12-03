@@ -103,6 +103,45 @@ def get_sorted_ram_memories(dts):
     return sorted_ram_list
 
 
+def get_codemodel(dts):
+    """decide code model"""
+
+    # just look at first hart and assume that all harts have the same bitness
+    isa = dts.get_by_path("/cpus").children[0].get_field("riscv,isa")
+    if "32" in isa[:4]:
+        # 32-bit hart, code model is always 'medlow'
+        return "medlow"
+
+    addr_list = []
+    mem_list = []
+
+    compatibles = ("sifive,testram0", "sifive,memorydelay0", "sifive,sram0", "sifive,dls0", "sifive,spi0")
+
+    for compatible in compatibles:
+        mem_list.extend(dts.match(compatible))
+
+    for mem in mem_list:
+        size = len(mem.get_reg())
+        if size < 2:
+            start = mem.get_reg()[0][0]
+            end = start + mem.get_reg()[0][1]
+            addr_list.extend((start,end))
+        else:
+            start = mem.get_reg()[1][0]
+            end = start + mem.get_reg()[1][1]
+            addr_list.extend((start,end))
+
+    if not addr_list:
+        return "medany"
+
+    values = sorted(list(addr_list))
+
+    # check if memory are in 2Gbytes space
+    if (values[-1] - values[0]) > (2<<31):
+        return "compact"
+
+    return "medany"
+
 def main(argv):
     """Parse arguments, extract data, and render the linker script to file"""
     # pylint: disable=too-many-locals
@@ -154,6 +193,9 @@ def main(argv):
     sorted_memories = list(memories.values())
     sorted_memories.sort(key=lambda m: m["name"])
 
+    # get code model for architecture ('medlow', 'medany' or 'compact')
+    code_model = get_codemodel(dts)
+
     values = {
         "memories": sorted_memories,
         "ram_memories": sorted_ram_memories,
@@ -168,6 +210,7 @@ def main(argv):
         "itim": itim,
         "lim": lim,
         "ram": ram,
+        "code_model": code_model,
     }
 
     if parsed_args.output:
