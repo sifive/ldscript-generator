@@ -129,12 +129,16 @@ def main(argv):
 
     harts = dts.get_by_path("/cpus").children
     chosenboothart = dts.chosen("metal,boothart")
-    if chosenboothart:
-        boot_hart = dts.get_by_reference(chosenboothart[0]).get_reg()[0][0]
-    elif len(harts) > 1:
-        boot_hart = 1
-    else:
+    is_worlguard = dts.match("sifive,worldguard1")
+    if is_worlguard:
         boot_hart = 0
+    else:
+        if chosenboothart:
+            boot_hart = dts.get_by_reference(chosenboothart[0]).get_reg()[0][0]
+        elif len(harts) > 1:
+            boot_hart = 1
+        else:
+            boot_hart = 0
 
     if len(sorted_ram_memories) == 0:
         # If there are no rams to scrub, don't bother scrubbing them
