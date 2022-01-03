@@ -151,7 +151,7 @@ def get_chosen_region(dts, chosen_property_name):
 
 def get_lim_region(dts):
     """Extract LIM region"""
-    lim = dts.match("sifive,ccache0")
+    lim = dts.match("sifive,ccache[01]")
 
     if lim and len(lim[0].get_reg()) == 2:
         return {
