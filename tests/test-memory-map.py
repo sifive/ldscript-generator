@@ -7,10 +7,11 @@ import unittest
 import pydevicetree
 
 from memory_map import *
+from generate_ldscript import get_rnmis
 
 
-def add_property(chosen, prop_s):
-    chosen.properties.append(pydevicetree.Property.from_dts(prop_s))
+def add_property(node, prop_s):
+    node.properties.append(pydevicetree.Property.from_dts(prop_s))
 
 
 class TestMemoryMap(unittest.TestCase):
@@ -240,6 +241,74 @@ class TestMemoryMap(unittest.TestCase):
         self.assertEqual(regions["itim"]["base_hex"], "0x1800000")
         self.assertEqual(regions["itim"]["length_hex"], "0x2000")
 
+    def test_get_rnmis(self):
+        dummy_cpu = """
+            L8: cpu@1 {
+                clock-frequency = <0>;
+                compatible = "sifive,rocket1", "riscv";
+                device_type = "cpu";
+                reg = <0x0>;
+                riscv,isa = "rv32imac";
+            };
+        """
+        cpus_parent = self.tree.get_by_path("/cpus")
+        new_cpu = pydevicetree.Node.from_dts(dummy_cpu)
+        cpus_parent.add_child(new_cpu)
+
+        cpus = cpus_parent.children
+        add_property(cpus[0], "sifive,nmi-interrupt-vector = <0x20410000 0xdeadbeef>;")
+        add_property(cpus[0], "sifive,nmi-exception-vector = <0x20420000 0xdeadbeef>;")
+        add_property(cpus[1], "sifive,nmi-interrupt-vector = <0x20430000 0xdeadbeef>;")
+        add_property(cpus[1], "sifive,nmi-exception-vector = <0x20440000 0xdeadbeef>;")
+
+        rnmis = get_rnmis(cpus)
+
+        self.assertEqual(len(rnmis), 2)
+        self.assertEqual(rnmis[0]["id"], 0)
+        self.assertEqual(rnmis[0]["irq"]["base_hex"], "0x20410000deadbeef")
+        self.assertEqual(rnmis[0]["irq"]["length_hex"], "0x1000")
+        self.assertEqual(rnmis[0]["excp"]["base_hex"], "0x20420000deadbeef")
+        self.assertEqual(rnmis[0]["excp"]["length_hex"], "0x1000")
+        self.assertEqual(rnmis[1]["id"], 1)
+        self.assertEqual(rnmis[1]["irq"]["base_hex"], "0x20430000deadbeef")
+        self.assertEqual(rnmis[1]["irq"]["length_hex"], "0x1000")
+        self.assertEqual(rnmis[1]["excp"]["base_hex"], "0x20440000deadbeef")
+        self.assertEqual(rnmis[1]["excp"]["length_hex"], "0x1000")
+
+        # Clean up
+        cpus_parent.remove_child(cpus[1])
+
+    def test_get_unique_rnmis(self):
+        dummy_cpu = """
+            L8: cpu@1 {
+                clock-frequency = <0>;
+                compatible = "sifive,rocket1", "riscv";
+                device_type = "cpu";
+                reg = <0x0>;
+                riscv,isa = "rv32imac";
+            };
+        """
+        cpus_parent = self.tree.get_by_path("/cpus")
+        new_cpu = pydevicetree.Node.from_dts(dummy_cpu)
+        cpus_parent.add_child(new_cpu)
+
+        cpus = cpus_parent.children
+        add_property(cpus[0], "sifive,nmi-interrupt-vector = <0x20410000 0xdeadbeef>;")
+        add_property(cpus[0], "sifive,nmi-exception-vector = <0x20420000 0xdeadbeef>;")
+        add_property(cpus[1], "sifive,nmi-interrupt-vector = <0x20410000 0xdeadbeef>;")
+        add_property(cpus[1], "sifive,nmi-exception-vector = <0x20420000 0xdeadbeef>;")
+
+        rnmis = get_rnmis(cpus)
+
+        self.assertEqual(len(rnmis), 1)
+        self.assertEqual(rnmis[0]["id"], 0)
+        self.assertEqual(rnmis[0]["irq"]["base_hex"], "0x20410000deadbeef")
+        self.assertEqual(rnmis[0]["irq"]["length_hex"], "0x1000")
+        self.assertEqual(rnmis[0]["excp"]["base_hex"], "0x20420000deadbeef")
+        self.assertEqual(rnmis[0]["excp"]["length_hex"], "0x1000")
+
+        # Clean up
+        cpus_parent.remove_child(cpus[1])
 
 if __name__ == '__main__':
     unittest.main()

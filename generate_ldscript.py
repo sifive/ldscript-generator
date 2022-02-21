@@ -103,6 +103,49 @@ def get_sorted_ram_memories(dts):
     return sorted_ram_list
 
 
+def get_rnmis(harts):
+    """
+    Generate RNMI interrupt and exception handler sections for all cores.
+    Cores may share same interrupt and exception handlers, so only the
+    unique handler sections (i.e. not same address) are generated.
+    """
+    rnmis = []
+    rnmi_irqs = set()
+    rnmi_excps = set()
+    rnmi_id = 0
+
+    for hart in harts:
+        rnmi_irq_addr = hart.get_fields("sifive,nmi-interrupt-vector")
+        rnmi_excp_addr = hart.get_fields("sifive,nmi-exception-vector")
+
+        if rnmi_irq_addr is not None and rnmi_excp_addr is not None:
+            _rnmi_irq_addr = rnmi_irq_addr[0] << 32 | rnmi_irq_addr[1]
+            _rnmi_excp_addr = rnmi_excp_addr[0] << 32 | rnmi_excp_addr[1]
+
+            # Skip interupt and exception handler section
+            # if we've already generated.
+            if (_rnmi_irq_addr not in rnmi_irqs and
+                    _rnmi_excp_addr not in rnmi_excps):
+
+                rnmi = {
+                    "id": rnmi_id,
+                    "irq": {
+                        "base_hex": "0x%x" % _rnmi_irq_addr,
+                        "length_hex": "0x%x" % 4096,
+                    },
+                    "excp": {
+                        "base_hex": "0x%x" % _rnmi_excp_addr,
+                        "length_hex": "0x%x" % 4096,
+                    }
+                }
+                rnmis.append(rnmi)
+                rnmi_id += 1
+
+                rnmi_irqs.add(_rnmi_irq_addr)
+                rnmi_excps.add(_rnmi_excp_addr)
+    return rnmis
+
+
 def main(argv):
     """Parse arguments, extract data, and render the linker script to file"""
     # pylint: disable=too-many-locals
@@ -154,6 +197,8 @@ def main(argv):
     sorted_memories = list(memories.values())
     sorted_memories.sort(key=lambda m: m["name"])
 
+    rnmis = get_rnmis(harts)
+
     values = {
         "memories": sorted_memories,
         "ram_memories": sorted_ram_memories,
@@ -168,6 +213,7 @@ def main(argv):
         "itim": itim,
         "lim": lim,
         "ram": ram,
+        "rnmis": rnmis,
     }
 
     if parsed_args.output:

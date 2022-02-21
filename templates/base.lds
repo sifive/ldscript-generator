@@ -29,6 +29,10 @@ MEMORY
 {% else %}
     {{ missingvalue("No memories are defined, cannot render linker script!") }}
 {% endfor %}
+{% for rnmi in rnmis %}
+    rnmi_irq_{{ rnmi.id }} (irx!wa) : ORIGIN = {{ rnmi.irq.base_hex }}, LENGTH = {{ rnmi.irq.length_hex }}
+    rnmi_excp_{{ rnmi.id }} (irx!wa) : ORIGIN = {{ rnmi.excp.base_hex }}, LENGTH = {{ rnmi.excp.length_hex }}
+{% endfor %}
 }
 
 PHDRS
@@ -40,6 +44,9 @@ PHDRS
     itim_init PT_LOAD;
     text PT_LOAD;
     lim_init PT_LOAD;
+{% if rnmis|length %}
+    rnmi PT_LOAD;
+{% endif %}
 }
 
 SECTIONS
@@ -103,6 +110,26 @@ SECTIONS
 {% endfor %}
 {% else %}
     PROVIDE(__metal_eccscrub_bit = 0);
+{% endif %}
+
+{% if rnmis|length %}
+    /* RNMI SECTION
+     *
+     * The following sections contain RNMI interrupt and exception handlers
+     * for all cores, if RNMI is present in the design, for the entire duration
+     * of program execution.
+     */
+
+{% for rnmi in rnmis %}
+    .rnmi_irq_{{ rnmi.id }} : {
+        KEEP (*(.rnmi_irq_{{ rnmi.id }}))
+    } >rnmi_irq_{{ rnmi.id }} :rnmi
+
+    .rnmi_excp_{{ rnmi.id }} : {
+        KEEP (*(.rnmi_excp_{{ rnmi.id }}))
+    } >rnmi_excp_{{ rnmi.id }} :rnmi
+
+{% endfor %}
 {% endif %}
 
     /* ROM SECTION
