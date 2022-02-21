@@ -12,4 +12,3 @@
  # Set layout options
  #}
 {% set ramrodata = False %}
-{% set eccscrub_en = False %}

@@ -15,7 +15,6 @@
  #}
 {% set ramrodata = False %}
 {% set privilege_en = True %}
-{% set eccscrub_en = True %}
 
 {% block privileged_function_section %}
 	.privileged_functions : ALIGN (32) {
